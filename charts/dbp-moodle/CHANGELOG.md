@@ -1,5 +1,13 @@
 # Changelog
 
+## [unreleased] - 2026-08-24
+## Fix
+- gpg key handling after debian13 upgrade
+  - With the helm chart created secret for the gpg keys, there was still the old naming "gpgkey.dbpinfra.pub.asc"
+    which needed adjustment after the debian13 update to match the new configuration and was renamed to "gpgkey.devops.pub.asc".
+    In case the chart created secret is used, one needs to adjust the helm chart values to hand over the gpg keys to the chart.
+  - The expected type of gpg_key_names is a List and was now changed from the default empty string, to a default empty List.
+
 ## [1.6.6] - 2026-08-12
 ### Fix
 - **DBP-2411** enable mod_booking again

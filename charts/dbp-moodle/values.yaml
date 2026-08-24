@@ -192,7 +192,7 @@ dbpMoodle:
     # -- Defines the maximum age of a full backup before a new full backup is created. The backups in between are incremental
     max_full_backup_age: "1W"
     # -- Provide a List of keys like: gpg_key_names: ["devops", "fallback"]
-    gpg_key_names: ""
+    gpg_key_names: []
     # -- If the gpgkeys values that are provided (gpgkey.devops.pub.asc) are filled with keys, and no existingSecret is provided
     # -- a secret will be created and the "gpg_key_names" value should be set to "devops" to match the created keys identifier
     gpgkeys:
