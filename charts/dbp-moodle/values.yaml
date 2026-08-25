@@ -191,11 +191,16 @@ dbpMoodle:
     retention_time: "6M"
     # -- Defines the maximum age of a full backup before a new full backup is created. The backups in between are incremental
     max_full_backup_age: "1W"
-    gpg_key_names: ""
+    # -- Provide a List of keys like: gpg_key_names: ["devops", "fallback"]
+    gpg_key_names: []
+    # -- If the gpgkeys values that are provided (gpgkey.devops.pub.asc) are filled with keys, and no existingSecret is provided
+    # -- a secret will be created and the "gpg_key_names" value should be set to "devops" to match the created keys identifier
     gpgkeys:
-      gpgkey.dbpinfra.pub.asc: ""
-      gpgkey.dbpinfra.sec.asc: ""
-      # -- Existing  secret for gpg keys
+      gpgkey.devops.pub.asc: ""
+      gpgkey.devops.sec.asc: ""
+      # -- Existing  secret for gpg keys, make sure the keys identifier is set in "gpg_key_names" for the backup to work properly
+      # -- Example: gpgkey.devops.pub.asc  -> gpg_key_names: ["devops"]
+      # -- If no value is set, a secret will be created with the keys from the values above
       existingSecret: ""
     s3_bucket_name: ""
     cluster_name: ""
