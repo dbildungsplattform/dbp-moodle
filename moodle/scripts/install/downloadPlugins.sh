@@ -47,6 +47,7 @@ plugin_list=(
     mod_videotime
     tool_mediatime
     auth_oidc
+    local_course_reminder
 )
 
 moodle_plugin_list=("${plugin_dependency_list[@]}" "${plugin_list[@]}")

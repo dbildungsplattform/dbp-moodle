@@ -98,6 +98,8 @@ global:
       enabled: false
     eledia_oidc:
       enabled: false
+    local_course_reminder:
+      enabled: false
 
 dbpMoodle:
   name: infra
