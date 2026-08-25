@@ -16,6 +16,7 @@ plugin_dependency_list=(
 plugin_list=(
     # mod_booking   custom download logic from gh until it is available via marketplace/directory
     # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
+    # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
     theme_boost_union
     mod_choicegroup
     mod_coursecertificate
@@ -47,7 +48,6 @@ plugin_list=(
     mod_videotime
     tool_mediatime
     auth_oidc
-    local_course_reminder
 )
 
 moodle_plugin_list=("${plugin_dependency_list[@]}" "${plugin_list[@]}")
@@ -116,10 +116,19 @@ download_booking() {
     rm -rf booking/
 }
 
+download_course_reminder(){
+    target_tag="v1.5.2"
+    download_url="https://github.com/krishnaGuptaGit/moodle-local_course_reminder/archive/refs/tags/${target_tag}.zip"
+
+    curl -sSfL "${download_url}" -o local_course_reminder.zip
+    echo "Downloaded course_reminder ${target_tag}"
+}
+
 download_oidc
 download_boost_magnific
 check_plugin_zip "theme_boost_magnific"
 download_booking
+download_course_reminder
 moosh plugin-list > /dev/null
 
 for plugin in "${moodle_plugin_list[@]}"; do
