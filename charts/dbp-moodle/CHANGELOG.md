@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] - 2026-08-26
+## [1.7.0] - 2026-08-26
 ### Feature
 - **DBP-2419** Replace Redis with valkey
   - Based on license changes and usage of bitnami-redis we adjust the bundled key-value store to valkey
