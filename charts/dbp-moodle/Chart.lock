@@ -1,10 +1,13 @@
 dependencies:
 - name: moodle
   repository: file://charts/moodle
-  version: 27.0.4
+  version: 27.0.5
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 19.5.3
+- name: valkey
+  repository: https://dbildungsplattform.github.io/helm-charts-registry/
+  version: 3.0.1
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 15.5.38
@@ -26,5 +29,5 @@ dependencies:
 - name: sql-exporter
   repository: https://burningalchemist.github.io/sql_exporter/
   version: 0.6.1
-digest: sha256:06dfae2ccebf0ec2f0ac55710dfdbfc7a098e247d0de7f55555fba13af78a734
-generated: "2026-02-25T11:16:48.650818811+01:00"
+digest: sha256:33cdb729297e37cae3df62200d74c3927b82a34db0c97ff38241144b8e1016c5
+generated: "2026-07-29T09:08:43.070996083Z"

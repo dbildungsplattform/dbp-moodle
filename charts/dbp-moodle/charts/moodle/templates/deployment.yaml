@@ -112,13 +112,12 @@ spec:
                 secretKeyRef:
                   name: {{ include "moodle.secretName" . }}
                   key: moodle-password
-            {{- if .Values.redis.enabled }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "moodle.secretName" . }}
                   key: redis-password
-            {{- end }}
+                  optional: true
             {{- if .Values.moodleSiteName }}
             - name: MOODLE_SITE_NAME
               value: {{ .Values.moodleSiteName| quote }}

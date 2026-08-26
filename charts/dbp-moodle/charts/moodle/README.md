@@ -156,7 +156,6 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | readinessProbe.periodSeconds | int | `5` |  |
 | readinessProbe.successThreshold | int | `1` |  |
 | readinessProbe.timeoutSeconds | int | `3` |  |
-| redis.enabled | bool | `false` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | resourcesPreset | string | `"micro"` |  |

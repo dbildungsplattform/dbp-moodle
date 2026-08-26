@@ -13,11 +13,15 @@ dependencies:
     version: "27.0.5"
     repository: "file://charts/moodle"
 
-  # TODO noch nicht klar wie beim Rechenzentrum hiermit umgegangen werden soll / welche Alternative genutzt wird
   - name: redis
     version: "19.5.3"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
+
+  - name: valkey
+    version: "3.0.1"
+    repository: https://dbildungsplattform.github.io/helm-charts-registry/
+    condition: valkey.enabled
 
   # Replaced by managed postgres
   - name: postgresql

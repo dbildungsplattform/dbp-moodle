@@ -55,10 +55,6 @@ extraDeploy: []
 
 ## @section Moodle&trade; parameters
 
-## @param  redis.enabled gets the value from the umbrella helm chart to use a ENV Var inside the
-redis:
-  enabled: false
-
 ## Bitnami Moodle&trade; image version
 ## ref: https://hub.docker.com/r/bitnami/moodle/tags/
 ## @param image.registry [default: REGISTRY_NAME] Moodle image registry

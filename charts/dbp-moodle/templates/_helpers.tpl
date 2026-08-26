@@ -70,8 +70,8 @@
 {{- default "1W" .Values.dbpMoodle.backup.max_full_backup_age }}
 {{- end -}}
 
-{{- define "moodle.redis.enabled" -}}
-{{- .Values.redis.enabled }}
+{{- define "dbpMoodle.sessionStore.enabled" -}}
+{{- if or .Values.redis.enabled (.Values.valkey).enabled -}}true{{- end -}}
 {{- end -}}
 
 {{- define "dbpMoodle.pluginConfigMap.content" -}}
