@@ -173,7 +173,7 @@ dbpMoodle:
     # -- Which kubectl image to use
     repository: "ghcr.io/dbildungsplattform"
     image: "moodle-tools"
-    tag: "1.1.15"
+    tag: "1.2.0"
 
   moodleUpdatePreparationHook:
     rules:
@@ -239,7 +239,7 @@ dbpMoodle:
     dump_kind: "full" # Possible values: full, custom
     repository: "ghcr.io/dbildungsplattform"
     image: "moodle-tools"
-    tag: "1.1.15"
+    tag: "1.2.0"
     resources:
       limits:
         cpu: 2000m
@@ -683,7 +683,7 @@ etherpad-postgresql:
 moodlecronjob:
   image:
     repository: "ghcr.io/dbildungsplattform/moodle-tools"
-    tag: "1.1.15"
+    tag: "1.2.0"
   clusterRole:
     create: false
   serviceAccount:
@@ -735,7 +735,7 @@ moodlecronjob:
 backup-cronjob:
   image:
     repository: "ghcr.io/dbildungsplattform/moodle-tools"
-    tag: "1.1.15"
+    tag: "1.2.0"
   clusterRole:
     create: false
   serviceAccount:

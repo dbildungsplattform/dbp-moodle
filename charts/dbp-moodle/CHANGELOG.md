@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+### Image Updates
+- **OPS-10494** Update Moodle Tools
+  - Bump Version of moodle-tools to 1.2.0
+
 ## [1.7.0] - 2026-08-26
 ### Feature
 - **DBP-2419** Replace Redis with valkey
