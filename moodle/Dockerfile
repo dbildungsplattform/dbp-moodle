@@ -9,9 +9,6 @@ ARG APACHE_VERSION=${APACHE_VERSION:-"2.4.67-1~deb13u1"}
 ARG APACHE_DOWNLOAD_URL="https://snapshot.debian.org/archive/debian/20260508T024741Z/pool/main/a/apache2"
 WORKDIR /
 ARG WITH_ALL_LOCALES="no"
-# User-Agent moosh sends to download.moodle.org. moosh hardcodes "User-Agent: moosh",
-# which download.moodle.org rejects with 403 from CI runners. Must not contain '|' or '"'.
-ARG MOOSH_USER_AGENT="Mozilla/5.0 (compatible; dbp-moodle-build; +https://github.com/dBildungsplattform/dbp-moodle)"
 RUN mkdir /bitnami
 RUN mkdir /dbp-moodle
 
@@ -63,12 +60,6 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
 # Because of current problems with moosh and no new release we use commit hashes. This one is the version bump to 1.38
 RUN curl -L https://github.com/tmuras/moosh/archive/c7674a7b8de77a3205a289c89bed093377a20004.tar.gz -o moosh.tar.gz && \
     mkdir /moosh && tar -xzvf moosh.tar.gz -C /moosh/ --strip-components=1
-# Replace the hardcoded User-Agent (see MOOSH_USER_AGENT above). The stream context header
-# overrides PHP's user_agent ini setting, so patching the source is the only way to change it.
-# The grep fails the build if a moosh bump changes the header line and the sed stops matching.
-RUN sed -i "s|User-Agent: moosh|User-Agent: ${MOOSH_USER_AGENT}|" \
-        /moosh/Moosh/Command/Generic/Plugin/PluginDownload.php && \
-    grep -q "User-Agent: ${MOOSH_USER_AGENT}" /moosh/Moosh/Command/Generic/Plugin/PluginDownload.php
 RUN mkdir /.moosh &&\
     chmod 774 /.moosh &&\
     cd /moosh/ && \
