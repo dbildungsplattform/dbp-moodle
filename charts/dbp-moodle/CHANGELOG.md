@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Changes
+- Normalize image value structure so Dependabot can detect and update image tags
+  - BREAKING: `dbpMoodle.moodleUpdatePreparationJob.{repository,image,tag}` moved to `dbpMoodle.moodleUpdatePreparationJob.image.{repository,tag}`
+  - BREAKING: `dbpMoodle.restore.{repository,image,tag}` moved to `dbpMoodle.restore.image.{repository,tag}`
+  - Environments overriding these keys must migrate their values files
+  - `clamav.image.repository: clamav/clamav` is now set explicitly (matches the upstream chart default, no behavior change)
+
 ### Image Updates
 - **OPS-10494** Update Moodle Tools
   - Bump Version of moodle-tools to 1.2.0

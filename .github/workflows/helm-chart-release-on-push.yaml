@@ -3,6 +3,8 @@ on:
   push:
     branches-ignore:
       - 'main'
+      # Dependabot branches must not trigger dev releases (ticket_from_branch cannot parse them)
+      - 'dependabot/**'
 
 concurrency:
   group: dbp-moodle-chart

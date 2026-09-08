@@ -12,6 +12,17 @@
               "type": ["string", "null"],
               "description": "Restore date in format YYYY-MM-DDTHH:MM:SS required.",
               "pattern": "^$|^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
+              }
             }
           }
         }

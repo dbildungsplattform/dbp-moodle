@@ -6,7 +6,7 @@ description: |
   The Chart can be deployed without any modification but it is advised to set own secrets acccording to this readme.
 type: application
 home: https://dbildungsplattform.github.io/dbp-moodle/
-version: 1.7.0
+version: 1.8.0
 appVersion: "4.5.12"
 dependencies:
   - name: moodle
