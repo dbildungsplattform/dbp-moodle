@@ -1,0 +1,3 @@
+# Snapshot of https://download.moodle.org/api/1.3/pluglist.php - a single ~14 MB minified line.
+# Suppress the diff and keep it out of the language stats.
+moodle/scripts/install/plugins.json -diff linguist-generated

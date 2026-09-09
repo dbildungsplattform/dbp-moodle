@@ -4,6 +4,17 @@ set -eo pipefail
 major_minor="${MOODLE_VERSION%.*}"
 plugin_index=0
 
+# The plugin list is shipped in the repo as scripts/install/plugins.json, a verbatim snapshot of
+# https://download.moodle.org/api/1.3/pluglist.php. That endpoint answers PHP's stream client
+# (used by "moosh plugin-list") with 403 from CI runners and also truncates the response every
+# few requests, so the list is never fetched at build time. "moosh plugin-download" only ever
+# reads the local file, so shipping it is enough.
+#
+# To pick up new plugin versions, refresh the snapshot and verify it is complete:
+#   curl -sSfL https://download.moodle.org/api/1.3/pluglist.php \
+#     -o moodle/scripts/install/plugins.json
+#   jq -e '.plugins | length > 2000' moodle/scripts/install/plugins.json
+
 plugin_dependency_list=(
     local_wunderbyte_table # Dependency of mod_booking
     tool_certificate # Dependency of mod_coursecertificate
@@ -17,6 +28,8 @@ plugin_list=(
     # mod_booking   custom download logic from gh until it is available via marketplace/directory
     # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
     # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
+    # format_topcoll   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
+    # theme_adaptable   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
     theme_boost_union
     mod_choicegroup
     mod_coursecertificate
@@ -26,7 +39,6 @@ plugin_list=(
     format_remuiformat
     local_staticpage
     format_tiles
-    format_topcoll
     mod_unilabel
     block_xp
     mod_zoom
@@ -41,7 +53,6 @@ plugin_list=(
     block_stash
     block_completion_progress
     tool_coursearchiver
-    theme_adaptable
     tool_usersuspension
     tool_dynamic_cohorts
     mod_subcourse
@@ -76,6 +87,25 @@ check_plugin_zip() {
     # kills unzip with SIGPIPE (exit 141) on large archives and fails the check.
     if ! unzip -Z1 "$plugin_zip" | grep -E '(^|/)version\.php$' > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' contains no version.php." >&2
+        exit 1
+    fi
+}
+
+# "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
+# and refuses to run when that file is missing, empty, or older than 24h by mtime. Plain cp stamps
+# the copy with the current time, so it is fresh enough by construction.
+# "$HOME" here resolves exactly like PHP's home_dir() (getenv('HOME')), which reads the same
+# variable from the same environment - /root during the image build. The directory has to be
+# created: the Dockerfile's "mkdir /.moosh" is a different path, and it used to be "moosh
+# plugin-list" that created $HOME/.moosh as a side effect.
+install_plugin_list() {
+    plugin_list_file="$HOME/.moosh/plugins.json"
+
+    mkdir -p "$HOME/.moosh"
+    cp /scripts/install/plugins.json "$plugin_list_file"
+
+    if ! jq -e '.plugins | length > 0' "$plugin_list_file" > /dev/null; then
+        echo "ERROR: bundled plugin list scripts/install/plugins.json is not valid JSON or is empty." >&2
         exit 1
     fi
 }
@@ -124,15 +154,39 @@ download_course_reminder(){
     echo "Downloaded course_reminder ${target_tag}"
 }
 
+# Download a tagged release archive from GitHub as <plugin_name>.zip.
+download_github_release() {
+    plugin_name=$1
+    repo=$2
+    tag=$3
+
+    curl -sSfL --retry 5 --retry-delay 10 \
+        "https://github.com/${repo}/archive/refs/tags/${tag}.zip" -o "${plugin_name}.zip"
+    echo "Downloaded ${plugin_name} ${tag} from github.com/${repo}"
+    check_plugin_zip "$plugin_name"
+}
+
+# The maintainer withdrew both plugins from the Moodle plugins directory, so they are no longer
+# in the plugin list. Latest releases of the MOODLE_405 branches (Moodle 4.5 only).
+download_topcoll() {
+    download_github_release format_topcoll gjbarnard/moodle-format_topcoll V405.1.4
+}
+
+download_adaptable() {
+    download_github_release theme_adaptable gjbarnard/moodle-theme_adaptable V405.2.9
+}
+
 download_oidc
 download_boost_magnific
 check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
-moosh plugin-list > /dev/null
+download_topcoll
+download_adaptable
+install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( $plugin_index > 0 && $plugin_index % 15 == 0 )); then
+    if (( plugin_index > 0 && plugin_index % 15 == 0 )); then
         echo "Reached batch of 15 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
