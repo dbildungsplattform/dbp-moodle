@@ -1,6 +1,6 @@
 # dbp-moodle
 
-![Version: 1.7.0](https://img.shields.io/badge/Version-1.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.5.12](https://img.shields.io/badge/AppVersion-4.5.12-informational?style=flat-square)
+![Version: 1.8.0](https://img.shields.io/badge/Version-1.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.5.12](https://img.shields.io/badge/AppVersion-4.5.12-informational?style=flat-square)
 
 This is a Helm Chart bundling some of the bitnami resources to deploy Moodle for DBildungsplattform. Extending them with features such as
 PostgreSQL support, Horizontal Autoscaling capabilities, Redis Session Store, Etherpad-Lite.
@@ -117,6 +117,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | clamav.freshclamConfig | string | `"Bytecode yes\nDatabaseDirectory /data\nDatabaseMirror database.clamav.net\nDatabaseOwner 1001\nLogTime yes\nNotifyClamd /etc/clamav/clamd.conf\nPidFile /tmp/freshclam.pid\nScriptedUpdates yes\n"` |  |
 | clamav.hpa.enabled | bool | `false` |  |
 | clamav.image.pullPolicy | string | `"IfNotPresent"` |  |
+| clamav.image.repository | string | `"clamav/clamav"` |  |
 | clamav.image.tag | string | `"1.5.1"` |  |
 | clamav.kind | string | `"StatefulSet"` |  |
 | clamav.podSecurityContext.fsGroup | int | `1001` |  |
@@ -189,8 +190,8 @@ The Chart can be deployed without any modification but it is advised to set own 
 | dbpMoodle.moodleUpdatePreparationHook.rules[1].verbs[2] | string | `"create"` |  |
 | dbpMoodle.moodleUpdatePreparationHook.rules[1].verbs[3] | string | `"patch"` |  |
 | dbpMoodle.moodleUpdatePreparationHook.rules[1].verbs[4] | string | `"watch"` |  |
-| dbpMoodle.moodleUpdatePreparationJob | object | `{"affinity":{},"enabled":false,"image":"moodle-tools","repository":"ghcr.io/dbildungsplattform","resources":{},"tag":"1.2.0","tolerations":[]}` | A preperation job which disables the php-cronjob, scales down the deployment and creates a backup if dbpMoodle.backup.enabled=true |
-| dbpMoodle.moodleUpdatePreparationJob.repository | string | `"ghcr.io/dbildungsplattform"` | Which kubectl image to use |
+| dbpMoodle.moodleUpdatePreparationJob | object | `{"affinity":{},"enabled":false,"image":{"repository":"ghcr.io/dbildungsplattform/moodle-tools","tag":"1.2.0"},"resources":{},"tolerations":[]}` | A preperation job which disables the php-cronjob, scales down the deployment and creates a backup if dbpMoodle.backup.enabled=true |
+| dbpMoodle.moodleUpdatePreparationJob.image | object | `{"repository":"ghcr.io/dbildungsplattform/moodle-tools","tag":"1.2.0"}` | Which moodle-tools image to use |
 | dbpMoodle.moodlecronjob | object | `{"rules":[{"apiGroups":[""],"resources":["pods","pods/exec"],"verbs":["get","list","create","watch"]}],"wait_timeout":"15m"}` | Configuration for the moodle-cronjob which runs moodles cron.php. This is required since moodle does not run as root |
 | dbpMoodle.name | string | `"infra"` |  |
 | dbpMoodle.phpConfig.additional | string | `""` | Any additional text to be included into the config.php |
@@ -202,7 +203,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | dbpMoodle.phpConfig.ip.blocked | string | `""` |  |
 | dbpMoodle.phpConfig.pluginUIInstallation | object | `{"enabled":false}` | Prevents the installation of Plugins from the Moodle Web Interface for Admins (Disabled by default) |
 | dbpMoodle.redis | object | `{"host":"moodle-redis-master","port":6379}` | Configurations for the optional redis |
-| dbpMoodle.restore | object | `{"affinity":{},"dump_kind":"full","enabled":false,"existingSecretDatabaseConfig":"moodle-database","existingSecretDatabasePassword":"moodle","existingSecretGPG":"","existingSecretKeyDatabasePassword":"","existingSecretKeyS3Access":"","existingSecretKeyS3Secret":"","existingSecretS3":"","image":"moodle-tools","podSecurityContext":{"fsGroup":1001},"replace_db_user_during_restore":false,"repository":"ghcr.io/dbildungsplattform","resources":{"limits":{"cpu":"2000m","memory":"4Gi"},"requests":{"cpu":"1000m","memory":"2Gi"}},"restoreDate":"","rules":[{"apiGroups":["apps"],"resources":["deployments/scale","deployments"],"verbs":["get","list","patch"]}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"runAsGroup":1001},"tag":"1.2.0","tolerations":[]}` | This restores moodle to the latest snapshot. Requires an existing s3 backup. ONLY USE FOR ROLLBACK |
+| dbpMoodle.restore | object | `{"affinity":{},"dump_kind":"full","enabled":false,"existingSecretDatabaseConfig":"moodle-database","existingSecretDatabasePassword":"moodle","existingSecretGPG":"","existingSecretKeyDatabasePassword":"","existingSecretKeyS3Access":"","existingSecretKeyS3Secret":"","existingSecretS3":"","image":{"repository":"ghcr.io/dbildungsplattform/moodle-tools","tag":"1.2.0"},"podSecurityContext":{"fsGroup":1001},"replace_db_user_during_restore":false,"resources":{"limits":{"cpu":"2000m","memory":"4Gi"},"requests":{"cpu":"1000m","memory":"2Gi"}},"restoreDate":"","rules":[{"apiGroups":["apps"],"resources":["deployments/scale","deployments"],"verbs":["get","list","patch"]}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"runAsGroup":1001},"tolerations":[]}` | This restores moodle to the latest snapshot. Requires an existing s3 backup. ONLY USE FOR ROLLBACK |
 | dbpMoodle.secrets | object | `{"database_admin_password":"","database_name":"","database_password":"","database_root_password":"","database_user":"","etherpad_api_key":"","etherpad_postgresql_password":"","moodle_password":"","moodle_user":"","redis_password":"","useChartSecret":true}` | Creates a secret with all relevant credentials for moodle -- Set useChartSecret: false to provide your own secret -- If you create your own secret, also set moodle.existingSecret (and moodle.externalDatabase.existingSecret if you bring your own DB) |
 | dbpMoodle.stage | string | `"infra"` |  |
 | dbpMoodle.uninstallSystemPlugins | bool | `false` |  |
