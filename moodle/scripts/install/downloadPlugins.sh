@@ -4,53 +4,16 @@ set -eo pipefail
 major_minor="${MOODLE_VERSION%.*}"
 plugin_index=0
 
-plugin_dependency_list=(
-    local_wunderbyte_table # Dependency of mod_booking
-    tool_certificate # Dependency of mod_coursecertificate
-    qbehaviour_adaptivemultipart # Dependency of qtype_stack
-    qbehaviour_dfexplicitvaildate # Dependency of qtype_stack
-    qbehaviour_dfcbmexplicitvaildate # Dependency of qtype_stack
-    qbank_importasversion # Dependency of qtype_stack
-)
+# The plugin list is shipped in the repo as scripts/install/plugins.json, generated from
+# https://download.moodle.org/api/1.3/pluglist.php. That endpoint answers PHP's stream client
+# (used by "moosh plugin-list") with 403 from CI runners and also truncates the response every
+# few requests, so the list is never fetched at build time. "moosh plugin-download" only ever
+# reads the local file, so shipping it is enough.
+#
+# To pick up new plugin versions, run scripts/install/updatePluginList.sh and commit the result.
 
-plugin_list=(
-    # mod_booking   custom download logic from gh until it is available via marketplace/directory
-    # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
-    # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
-    theme_boost_union
-    mod_choicegroup
-    mod_coursecertificate
-    mod_etherpadlite
-    mod_hvp
-    mod_pdfannotator
-    format_remuiformat
-    local_staticpage
-    format_tiles
-    format_topcoll
-    mod_unilabel
-    block_xp
-    mod_zoom
-    filter_filtercodes
-    filter_shortcodes
-    tool_heartbeat
-    availability_cohort
-    mod_board
-    mod_checklist
-    block_sharing_cart
-    qtype_stack
-    block_stash
-    block_completion_progress
-    tool_coursearchiver
-    theme_adaptable
-    tool_usersuspension
-    tool_dynamic_cohorts
-    mod_subcourse
-    mod_videotime
-    tool_mediatime
-    auth_oidc
-)
-
-moodle_plugin_list=("${plugin_dependency_list[@]}" "${plugin_list[@]}")
+# shellcheck source=./pluginList.sh
+source "$(dirname "$0")/pluginList.sh"
 
 cd /plugins || exit 1
 
@@ -76,6 +39,38 @@ check_plugin_zip() {
     # kills unzip with SIGPIPE (exit 141) on large archives and fails the check.
     if ! unzip -Z1 "$plugin_zip" | grep -E '(^|/)version\.php$' > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' contains no version.php." >&2
+        exit 1
+    fi
+}
+
+# "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
+# and refuses to run when that file is missing, empty, or older than 24h by mtime. Plain cp stamps
+# the copy with the current time, so it is fresh enough by construction.
+# "$HOME" here resolves exactly like PHP's home_dir() (getenv('HOME')), which reads the same
+# variable from the same environment - /root during the image build. The directory has to be
+# created: the Dockerfile's "mkdir /.moosh" is a different path, and it used to be "moosh
+# plugin-list" that created $HOME/.moosh as a side effect.
+install_plugin_list() {
+    plugin_list_file="$HOME/.moosh/plugins.json"
+
+    mkdir -p "$HOME/.moosh"
+    cp /scripts/install/plugins.json "$plugin_list_file"
+
+    if ! jq -e '.plugins | length > 0' "$plugin_list_file" > /dev/null; then
+        echo "ERROR: bundled plugin list scripts/install/plugins.json is not valid JSON or is empty." >&2
+        exit 1
+    fi
+
+    # plugins.json only holds the components listed in pluginList.sh, so a plugin added there
+    # without regenerating it would otherwise fail deep in the loop with moosh's terse
+    # "Couldn't find <plugin>". Fail up front with something actionable instead.
+    wanted=$(printf '%s\n' "${plugin_list_components[@]}" | jq -R . | jq -sc .)
+    missing=$(jq -r --argjson wanted "$wanted" '$wanted - [.plugins[].component] | .[]' \
+        "$plugin_list_file")
+    if [ -n "$missing" ]; then
+        echo "ERROR: plugins.json has no entry for:" >&2
+        echo "$missing" >&2
+        echo "Run scripts/install/updatePluginList.sh and commit the result." >&2
         exit 1
     fi
 }
@@ -124,15 +119,39 @@ download_course_reminder(){
     echo "Downloaded course_reminder ${target_tag}"
 }
 
+# Download a tagged release archive from GitHub as <plugin_name>.zip.
+download_github_release() {
+    plugin_name=$1
+    repo=$2
+    tag=$3
+
+    curl -sSfL --retry 5 --retry-delay 10 \
+        "https://github.com/${repo}/archive/refs/tags/${tag}.zip" -o "${plugin_name}.zip"
+    echo "Downloaded ${plugin_name} ${tag} from github.com/${repo}"
+    check_plugin_zip "$plugin_name"
+}
+
+# The maintainer withdrew both plugins from the Moodle plugins directory, so they are no longer
+# in the plugin list. Latest releases of the MOODLE_405 branches (Moodle 4.5 only).
+download_topcoll() {
+    download_github_release format_topcoll gjbarnard/moodle-format_topcoll V405.1.4
+}
+
+download_adaptable() {
+    download_github_release theme_adaptable gjbarnard/moodle-theme_adaptable V405.2.9
+}
+
 download_oidc
 download_boost_magnific
 check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
-moosh plugin-list > /dev/null
+download_topcoll
+download_adaptable
+install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( $plugin_index > 0 && $plugin_index % 15 == 0 )); then
+    if (( plugin_index > 0 && plugin_index % 15 == 0 )); then
         echo "Reached batch of 15 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
