@@ -4,13 +4,6 @@ set -eo pipefail
 major_minor="${MOODLE_VERSION%.*}"
 plugin_index=0
 
-# download.moodle.org answers PHP's stream client (used by "moosh plugin-list") with 403 from
-# CI runners, while curl is accepted. The plugin list is therefore fetched with curl and the
-# version resolution is done with jq instead of moosh.
-plugin_list_url="https://download.moodle.org/api/1.3/pluglist.php"
-plugin_list_file="/tmp/pluglist.json"
-download_user_agent="Mozilla/5.0 (compatible; dbp-moodle-build; +https://github.com/dBildungsplattform/dbp-moodle)"
-
 plugin_dependency_list=(
     local_wunderbyte_table # Dependency of mod_booking
     tool_certificate # Dependency of mod_coursecertificate
@@ -24,8 +17,6 @@ plugin_list=(
     # mod_booking   custom download logic from gh until it is available via marketplace/directory
     # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
     # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
-    # format_topcoll   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
-    # theme_adaptable   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
     theme_boost_union
     mod_choicegroup
     mod_coursecertificate
@@ -35,6 +26,7 @@ plugin_list=(
     format_remuiformat
     local_staticpage
     format_tiles
+    format_topcoll
     mod_unilabel
     block_xp
     mod_zoom
@@ -49,6 +41,7 @@ plugin_list=(
     block_stash
     block_completion_progress
     tool_coursearchiver
+    theme_adaptable
     tool_usersuspension
     tool_dynamic_cohorts
     mod_subcourse
@@ -87,44 +80,6 @@ check_plugin_zip() {
     fi
 }
 
-fetch_plugin_list() {
-    curl -sSfL --retry 5 --retry-delay 10 --retry-all-errors \
-        -A "$download_user_agent" -H 'Accept: application/json' \
-        "$plugin_list_url" -o "$plugin_list_file"
-    if ! jq -e '.plugins | length > 0' "$plugin_list_file" > /dev/null; then
-        echo "ERROR: plugin list from $plugin_list_url is not valid JSON or is empty." >&2
-        exit 1
-    fi
-}
-
-# Same selection as "moosh plugin-download -v <release>": the highest plugin version that
-# lists <release> in its supported Moodle versions. Prints the download URL or fails.
-resolve_plugin_url() {
-    plugin_name=$1
-    release=$2
-
-    url=$(jq -r --arg c "$plugin_name" --arg rel "$release" '
-        [ .plugins[] | select(.component == $c) | .versions[]
-          | select(any(.supportedmoodles[]; .release == $rel)) ]
-        | max_by(.version | tonumber) | .downloadurl // empty' "$plugin_list_file")
-    if [ -z "$url" ]; then
-        echo "ERROR: no version of Moodle plugin '$plugin_name' supports Moodle $release." >&2
-        exit 1
-    fi
-    echo "$url"
-}
-
-download_plugin() {
-    plugin_name=$1
-    release=$2
-
-    url=$(resolve_plugin_url "$plugin_name" "$release")
-    curl -sSfL --retry 5 --retry-delay 10 -A "$download_user_agent" \
-        "$url" -o "${plugin_name}.zip"
-    echo "Downloaded ${plugin_name} for Moodle ${release} from ${url}"
-    check_plugin_zip "$plugin_name"
-}
-
 download_oidc() {
     target_branch="v_45" # eLeDia currently doesn't use any tags, we always use the latest version on branch v_45
 
@@ -141,7 +96,7 @@ download_oidc() {
 download_boost_magnific() {
     # The maintainer stopped publishing new versions to the Moodle marketplace; the
     # only remaining published version (9.6.2, requires Moodle >= 4.4) has broken
-    # supported-versions metadata ("Moodle 1.9"), so the version resolution for Moodle 4.5
+    # supported-versions metadata ("Moodle 1.9"), so "moosh plugin-download -v 4.5"
     # refuses it. Download that version directly instead. New releases are only
     # distributed via https://eduardokraus.com/marketplace-plugins/plugin/theme_boost_magnific
     curl -sSfL "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026062801/download" \
@@ -169,44 +124,22 @@ download_course_reminder(){
     echo "Downloaded course_reminder ${target_tag}"
 }
 
-# Download a tagged release archive from GitHub as <plugin_name>.zip.
-download_github_release() {
-    plugin_name=$1
-    repo=$2
-    tag=$3
-
-    curl -sSfL --retry 5 --retry-delay 10 -A "$download_user_agent" \
-        "https://github.com/${repo}/archive/refs/tags/${tag}.zip" -o "${plugin_name}.zip"
-    echo "Downloaded ${plugin_name} ${tag} from github.com/${repo}"
-    check_plugin_zip "$plugin_name"
-}
-
-# The maintainer withdrew both plugins from the Moodle plugins directory, so they are no longer
-# in the plugin list. Latest releases of the MOODLE_405 branches (Moodle 4.5 only).
-download_topcoll() {
-    download_github_release format_topcoll gjbarnard/moodle-format_topcoll V405.1.4
-}
-
-download_adaptable() {
-    download_github_release theme_adaptable gjbarnard/moodle-theme_adaptable V405.2.9
-}
-
 download_oidc
 download_boost_magnific
 check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
-download_topcoll
-download_adaptable
-fetch_plugin_list
+moosh plugin-list > /dev/null
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( plugin_index > 0 && plugin_index % 15 == 0 )); then
+    if (( $plugin_index > 0 && $plugin_index % 15 == 0 )); then
         echo "Reached batch of 15 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
-    download_plugin "$plugin" "$major_minor"
+    php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$major_minor" "$plugin"
+    check_plugin_zip "$plugin"
     plugin_index=$((plugin_index + 1))
 done
 
-download_plugin customfield_dynamic 3.7
+moosh plugin-download -v 3.7 customfield_dynamic
+check_plugin_zip "customfield_dynamic"
