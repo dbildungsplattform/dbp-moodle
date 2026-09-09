@@ -4,64 +4,16 @@ set -eo pipefail
 major_minor="${MOODLE_VERSION%.*}"
 plugin_index=0
 
-# The plugin list is shipped in the repo as scripts/install/plugins.json, a verbatim snapshot of
+# The plugin list is shipped in the repo as scripts/install/plugins.json, generated from
 # https://download.moodle.org/api/1.3/pluglist.php. That endpoint answers PHP's stream client
 # (used by "moosh plugin-list") with 403 from CI runners and also truncates the response every
 # few requests, so the list is never fetched at build time. "moosh plugin-download" only ever
 # reads the local file, so shipping it is enough.
 #
-# To pick up new plugin versions, refresh the snapshot and verify it is complete:
-#   curl -sSfL https://download.moodle.org/api/1.3/pluglist.php \
-#     -o moodle/scripts/install/plugins.json
-#   jq -e '.plugins | length > 2000' moodle/scripts/install/plugins.json
+# To pick up new plugin versions, run scripts/install/updatePluginList.sh and commit the result.
 
-plugin_dependency_list=(
-    local_wunderbyte_table # Dependency of mod_booking
-    tool_certificate # Dependency of mod_coursecertificate
-    qbehaviour_adaptivemultipart # Dependency of qtype_stack
-    qbehaviour_dfexplicitvaildate # Dependency of qtype_stack
-    qbehaviour_dfcbmexplicitvaildate # Dependency of qtype_stack
-    qbank_importasversion # Dependency of qtype_stack
-)
-
-plugin_list=(
-    # mod_booking   custom download logic from gh until it is available via marketplace/directory
-    # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
-    # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
-    # format_topcoll   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
-    # theme_adaptable   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
-    theme_boost_union
-    mod_choicegroup
-    mod_coursecertificate
-    mod_etherpadlite
-    mod_hvp
-    mod_pdfannotator
-    format_remuiformat
-    local_staticpage
-    format_tiles
-    mod_unilabel
-    block_xp
-    mod_zoom
-    filter_filtercodes
-    filter_shortcodes
-    tool_heartbeat
-    availability_cohort
-    mod_board
-    mod_checklist
-    block_sharing_cart
-    qtype_stack
-    block_stash
-    block_completion_progress
-    tool_coursearchiver
-    tool_usersuspension
-    tool_dynamic_cohorts
-    mod_subcourse
-    mod_videotime
-    tool_mediatime
-    auth_oidc
-)
-
-moodle_plugin_list=("${plugin_dependency_list[@]}" "${plugin_list[@]}")
+# shellcheck source=./pluginList.sh
+source "$(dirname "$0")/pluginList.sh"
 
 cd /plugins || exit 1
 
@@ -106,6 +58,19 @@ install_plugin_list() {
 
     if ! jq -e '.plugins | length > 0' "$plugin_list_file" > /dev/null; then
         echo "ERROR: bundled plugin list scripts/install/plugins.json is not valid JSON or is empty." >&2
+        exit 1
+    fi
+
+    # plugins.json only holds the components listed in pluginList.sh, so a plugin added there
+    # without regenerating it would otherwise fail deep in the loop with moosh's terse
+    # "Couldn't find <plugin>". Fail up front with something actionable instead.
+    wanted=$(printf '%s\n' "${plugin_list_components[@]}" | jq -R . | jq -sc .)
+    missing=$(jq -r --argjson wanted "$wanted" '$wanted - [.plugins[].component] | .[]' \
+        "$plugin_list_file")
+    if [ -n "$missing" ]; then
+        echo "ERROR: plugins.json has no entry for:" >&2
+        echo "$missing" >&2
+        echo "Run scripts/install/updatePluginList.sh and commit the result." >&2
         exit 1
     fi
 }
