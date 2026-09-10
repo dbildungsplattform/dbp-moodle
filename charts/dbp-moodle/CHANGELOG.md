@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.8.0] - 2026-09-10
 ### Changes
 - Normalize image value structure so Dependabot can detect and update image tags
   - BREAKING: `dbpMoodle.moodleUpdatePreparationJob.{repository,image,tag}` moved to `dbpMoodle.moodleUpdatePreparationJob.image.{repository,tag}`
