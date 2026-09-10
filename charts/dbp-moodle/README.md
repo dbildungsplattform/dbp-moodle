@@ -252,7 +252,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | etherpadlite.externalDatabase.type | string | `"postgres"` | Type of DB to provision, possible values are "postgres" |
 | etherpadlite.externalDatabase.user | string | `"etherpad"` | Existing username in the external db |
 | etherpadlite.image.repository | string | `"ghcr.io/dbildungsplattform/etherpad"` |  |
-| etherpadlite.image.tag | string | `"2.6.1.0"` |  |
+| etherpadlite.image.tag | string | `"3.3.3.0"` |  |
 | etherpadlite.ingress.annotations."cert-manager.io/cluster-issuer" | string | `"sc-cert-manager-clusterissuer-letsencrypt"` |  |
 | etherpadlite.ingress.enabled | bool | `true` |  |
 | etherpadlite.ingress.hosts[0].host | string | `"etherpad.example.de"` |  |
