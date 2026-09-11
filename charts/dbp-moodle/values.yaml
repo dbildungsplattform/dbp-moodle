@@ -565,7 +565,7 @@ etherpadlite:
   enabled: false
   image:
     repository: "ghcr.io/dbildungsplattform/etherpad"
-    tag: "2.6.1.0"
+    tag: "3.3.3.0"
   # Currently this data is doubled with the env vars because we need the fields for backup and retore jobs
   externalDatabase:
     # -- Type of DB to provision, possible values are "postgres"
