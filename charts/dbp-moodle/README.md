@@ -16,12 +16,12 @@ The Chart can be deployed without any modification but it is advised to set own 
 | file://charts/cronjob | cronjob | 0.1.0 |
 | file://charts/etherpad | etherpad | 0.1.0 |
 | file://charts/moodle | moodle | 27.0.5 |
-| https://burningalchemist.github.io/sql_exporter/ | sql-exporter | 0.6.1 |
+| https://burningalchemist.github.io/sql_exporter/ | sql-exporter | 0.18.10 |
 | https://charts.bitnami.com/bitnami | postgresql | 15.5.38 |
 | https://charts.bitnami.com/bitnami | postgresql | 15.5.38 |
 | https://charts.bitnami.com/bitnami | redis | 19.5.3 |
 | https://dbildungsplattform.github.io/helm-charts-registry/ | valkey | 3.0.1 |
-| https://wiremind.github.io/wiremind-helm-charts | clamav | 3.5.0 |
+| https://wiremind.github.io/wiremind-helm-charts | clamav | 3.7.3 |
 
 ## Values
 
