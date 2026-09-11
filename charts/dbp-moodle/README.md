@@ -118,7 +118,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | clamav.hpa.enabled | bool | `false` |  |
 | clamav.image.pullPolicy | string | `"IfNotPresent"` |  |
 | clamav.image.repository | string | `"clamav/clamav"` |  |
-| clamav.image.tag | string | `"1.5.1"` |  |
+| clamav.image.tag | string | `"1.5.4"` |  |
 | clamav.kind | string | `"StatefulSet"` |  |
 | clamav.podSecurityContext.fsGroup | int | `1001` |  |
 | clamav.podSecurityContext.runAsGroup | int | `1001` |  |
@@ -336,7 +336,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | moodle.ingress.tls | bool | `true` |  |
 | moodle.metrics.enabled | bool | `true` |  |
 | moodle.metrics.image.repository | string | `"lusotycoon/apache-exporter"` |  |
-| moodle.metrics.image.tag | string | `"v1.0.12"` |  |
+| moodle.metrics.image.tag | string | `"v1.1.1"` |  |
 | moodle.metrics.resources | object | `{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}` | Resources have to be set so that the horizontal pod autoscaler for moodle can read the moodle cpu consumption correctly |
 | moodle.metrics.service.type | string | `"ClusterIP"` |  |
 | moodle.moodleEmail | string | `""` |  |

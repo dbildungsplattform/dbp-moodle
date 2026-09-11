@@ -95,7 +95,7 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | metrics.image.pullSecrets | list | `[]` |  |
 | metrics.image.registry | string | `"docker.io"` |  |
 | metrics.image.repository | string | `"lusotycoon/apache-exporter"` |  |
-| metrics.image.tag | string | `"v1.0.12"` |  |
+| metrics.image.tag | string | `"v1.1.1"` |  |
 | metrics.podAnnotations."prometheus.io/port" | string | `"{{ .Values.metrics.service.port }}"` |  |
 | metrics.podAnnotations."prometheus.io/scrape" | string | `"true"` |  |
 | metrics.resources | object | `{}` |  |
