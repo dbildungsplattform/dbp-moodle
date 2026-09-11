@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.1] - 2026-09-11
+### Dependencies
+- Update dependencies
+  - Updates `clamav` from 3.5.0 to 3.7.3 (chart)
+  - Updates `sql-exporter` from 0.6.1 to 0.18.10 (chart)
+  - Updates `clamav/clamav` from 1.5.1 to 1.5.4 (image)
+  - Updates `lusotycoon/apache-exporter` from v1.0.12 to v1.1.1 (image)
+
 ## [1.8.0] - 2026-09-10
 ### Changes
 - Normalize image value structure so Dependabot can detect and update image tags
