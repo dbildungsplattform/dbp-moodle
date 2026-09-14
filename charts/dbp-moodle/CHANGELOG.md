@@ -1,5 +1,9 @@
 # Changelog
 
+## unreleased ##
+- **OPS-10912** Update Etherpad major Version
+  - Bump Etherpad Version to 3.3.3.0
+
 ## [1.8.0] - 2026-09-10
 ### Changes
 - Normalize image value structure so Dependabot can detect and update image tags
