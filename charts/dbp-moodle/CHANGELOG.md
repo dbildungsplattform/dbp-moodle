@@ -4,6 +4,7 @@
 ### Image Updates
 - **OPS-10494** Update Moodle Tools
   - Bump Version of moodle-tools to 1.2.0
+- **OPS-10912** Update Etherpad major Version
   - Bump Etherpad Version to 3.3.3.0
 
 ## [1.7.0] - 2026-08-26
