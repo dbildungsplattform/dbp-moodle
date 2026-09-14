@@ -346,6 +346,11 @@ moodle:
     # -- Debug mode for more detailed moodle installation and log output
     debug: false
   moodleSkipInstall: false
+  # -- Content of a custom robots.txt served from the Moodle webroot.
+  # -- When set to a non-empty value, a ConfigMap is created and the file is
+  # -- mounted to the webroot (robots.txt) inside the Moodle container.
+  # -- Leave empty to keep the default (no robots.txt override).
+  robotsTxt: ""
   moodleSiteName: "Moodle"
   moodleLang: "de"
   moodleUsername: admin

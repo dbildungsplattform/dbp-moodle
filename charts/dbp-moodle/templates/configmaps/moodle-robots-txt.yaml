@@ -1,0 +1,10 @@
+{{- if .Values.moodle.robotsTxt }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: moodle-robots-txt
+  namespace: {{ .Release.Namespace }}
+data:
+  robots.txt: |-
+{{ .Values.moodle.robotsTxt | indent 4 }}
+{{- end }}
