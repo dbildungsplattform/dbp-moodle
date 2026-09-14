@@ -45,7 +45,7 @@ spec:
         {{- toYaml .Values.dbpMoodle.restore.podSecurityContext | nindent 8 }}
       containers:
       - name:  moodle-restore-job
-        image: "{{ .Values.dbpMoodle.restore.repository }}/{{ .Values.dbpMoodle.restore.image }}:{{ .Values.dbpMoodle.restore.tag }}"
+        image: "{{ .Values.dbpMoodle.restore.image.repository }}:{{ .Values.dbpMoodle.restore.image.tag }}"
         command:
           - /bin/sh
           - -c

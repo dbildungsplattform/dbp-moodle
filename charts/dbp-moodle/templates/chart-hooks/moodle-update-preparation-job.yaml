@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: moodle-update-preparation
-          image: "{{ .Values.dbpMoodle.moodleUpdatePreparationJob.repository }}/{{ .Values.dbpMoodle.moodleUpdatePreparationJob.image }}:{{ .Values.dbpMoodle.moodleUpdatePreparationJob.tag }}"
+          image: "{{ .Values.dbpMoodle.moodleUpdatePreparationJob.image.repository }}:{{ .Values.dbpMoodle.moodleUpdatePreparationJob.image.tag }}"
           securityContext:
             privileged: false
           command: ["/bin/bash", "/update-preparation.sh"]

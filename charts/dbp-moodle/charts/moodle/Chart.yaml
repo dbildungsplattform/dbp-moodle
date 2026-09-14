@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: APACHE-2.0
 
 annotations:
+  # NOTE: this images block is a YAML literal string that Dependabot cannot update.
+  # Keep the tags below in sync manually when bumping the corresponding images in values.yaml.
   images: |
     - name: apache-exporter
       image: docker.io/lusotycoon/apache-exporter:v1.0.12

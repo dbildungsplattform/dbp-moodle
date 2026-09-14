@@ -1,0 +1,105 @@
+version: 2
+updates:
+  # Container images in Helm values files. The "docker" ecosystem parses
+  # helm-values-style image blocks (repository/tag and registry/repository/tag).
+  # The "helm" ecosystem is NOT used for values files due to 
+  # https://github.com/dependabot/dependabot-core/issues/12207
+  - package-ecosystem: "docker"
+    directories:
+      - "/charts/dbp-moodle"                # umbrella values.yaml
+      - "/charts/dbp-moodle/charts/moodle"  # vendored moodle subchart values.yaml (kept in sync)
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "docker"
+    groups:
+      dbp-images:
+        patterns:
+          - "*dbildungsplattform*"
+      non-major-updates:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "*dbildungsplattform*"
+    ignore:
+      # bitnamilegacy/* is a frozen mirror (bitnami/charts#35164) - no new tags will appear
+      - dependency-name: "bitnamilegacy/*"
+      # goemaxima is built in-repo with date-based tags (e.g. 2026080600-master-...)
+      # whose ordering Dependabot cannot rank reliably
+      - dependency-name: "*goemaxima*"
+      # v1.05 is a mis-tagged 2019 release (v1.0.5) that sorts above v1.0.12 and v1.1.1
+      # (tag written without the v prefix - docker ignore conditions require plain versions)
+      - dependency-name: "lusotycoon/apache-exporter"
+        versions: ["1.05"]
+
+  # Base images of the two in-repo image builds
+  - package-ecosystem: "docker"
+    directories:
+      - "/moodle"
+      - "/moodle-tools"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "docker"
+    ignore:
+      # PHP version must follow Moodle's supported PHP matrix - handle major bumps manually
+      - dependency-name: "php"
+        update-types: ["version-update:semver-major"]
+
+  # Helm chart dependencies in Chart.yaml ONLY.
+  # exclude-paths works around https://github.com/dependabot/dependabot-core/issues/12207
+  # (helm ecosystem corrupts values files)
+  - package-ecosystem: "helm"
+    directory: "/charts/dbp-moodle"
+    exclude-paths:
+      - "**/values.yaml"
+      - "**/values.yml"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "helm"
+    groups:
+      helm-non-major:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # redis chart is disabled (redis.enabled: false), replaced by valkey, and pinned
+      # to the last version compatible with the bitnamilegacy images
+      - dependency-name: "redis"
+      # postgresql chart is pinned to 15.5.38 for bitnamilegacy image compatibility
+      # and is being replaced by managed postgres
+      - dependency-name: "postgresql"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
