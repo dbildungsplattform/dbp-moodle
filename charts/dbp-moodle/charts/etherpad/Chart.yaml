@@ -3,4 +3,4 @@ name: etherpad
 description: A Helm chart to install Etherpad in Kubernetes
 type: application
 version: 0.1.0
-appVersion: 2.6.1
+appVersion: 3.3.3
