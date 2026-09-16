@@ -204,6 +204,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | dbpMoodle.phpConfig.pluginUIInstallation | object | `{"enabled":false}` | Prevents the installation of Plugins from the Moodle Web Interface for Admins (Disabled by default) |
 | dbpMoodle.redis | object | `{"host":"moodle-redis-master","port":6379}` | Configurations for the optional redis |
 | dbpMoodle.restore | object | `{"affinity":{},"dump_kind":"full","enabled":false,"existingSecretDatabaseConfig":"moodle-database","existingSecretDatabasePassword":"moodle","existingSecretGPG":"","existingSecretKeyDatabasePassword":"","existingSecretKeyS3Access":"","existingSecretKeyS3Secret":"","existingSecretS3":"","image":{"repository":"ghcr.io/dbildungsplattform/moodle-tools","tag":"1.2.0"},"podSecurityContext":{"fsGroup":1001},"replace_db_user_during_restore":false,"resources":{"limits":{"cpu":"2000m","memory":"4Gi"},"requests":{"cpu":"1000m","memory":"2Gi"}},"restoreDate":"","rules":[{"apiGroups":["apps"],"resources":["deployments/scale","deployments"],"verbs":["get","list","patch"]}],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"runAsGroup":1001},"tolerations":[]}` | This restores moodle to the latest snapshot. Requires an existing s3 backup. ONLY USE FOR ROLLBACK |
+| dbpMoodle.robotsTxt | string | `""` | Content of the robots.txt served from the Moodle webroot. -- Always installed to /dbp-moodle/moodle/robots.txt inside the Moodle -- container (an empty value results in an empty robots.txt). |
 | dbpMoodle.secrets | object | `{"database_admin_password":"","database_name":"","database_password":"","database_root_password":"","database_user":"","etherpad_api_key":"","etherpad_postgresql_password":"","moodle_password":"","moodle_user":"","redis_password":"","useChartSecret":true}` | Creates a secret with all relevant credentials for moodle -- Set useChartSecret: false to provide your own secret -- If you create your own secret, also set moodle.existingSecret (and moodle.externalDatabase.existingSecret if you bring your own DB) |
 | dbpMoodle.stage | string | `"infra"` |  |
 | dbpMoodle.uninstallSystemPlugins | bool | `false` |  |
@@ -348,13 +349,13 @@ The Chart can be deployed without any modification but it is advised to set own 
 | moodle.persistence.existingClaim | string | `"moodle-data"` | If this value is unset, the bitnami/moodle chart generates its own PV & PVC |
 | moodle.podAnnotations.moodle/image | string | `"{{- .Values.image.repository -}}:{{- .Values.image.tag -}}"` |  |
 | moodle.podAnnotations.moodleplugins/checksum | string | `"{{- include \"dbpMoodle.pluginConfigMap.content\" . | sha256sum -}}"` |  |
+| moodle.podAnnotations.robots-txt/checksum | string | `"{{- .Values.dbpMoodle.robotsTxt | sha256sum -}}"` |  |
 | moodle.podSecurityContext.enabled | bool | `true` |  |
 | moodle.readinessProbe.path | string | `"/login/index.php?noredirect=1"` |  |
 | moodle.resources.limits.cpu | int | `6` |  |
 | moodle.resources.limits.memory | string | `"3Gi"` |  |
 | moodle.resources.requests.cpu | string | `"300m"` |  |
 | moodle.resources.requests.memory | string | `"512Mi"` |  |
-| moodle.robotsTxt | string | `""` | Content of a custom robots.txt served from the Moodle webroot. -- When set to a non-empty value, a ConfigMap is created and its content is -- installed to /dbp-moodle/moodle/robots.txt inside the Moodle container on -- every start (so value changes propagate on upgrade). -- Leave empty to keep the default (no robots.txt override). |
 | moodle.service.type | string | `"ClusterIP"` |  |
 | moodle.startupProbe.enabled | bool | `true` |  |
 | moodle.startupProbe.failureThreshold | int | `120` |  |
