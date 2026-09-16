@@ -354,6 +354,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | moodle.resources.limits.memory | string | `"3Gi"` |  |
 | moodle.resources.requests.cpu | string | `"300m"` |  |
 | moodle.resources.requests.memory | string | `"512Mi"` |  |
+| moodle.robotsTxt | string | `""` | Content of a custom robots.txt served from the Moodle webroot. -- When set to a non-empty value, a ConfigMap is created and its content is -- installed to /dbp-moodle/moodle/robots.txt inside the Moodle container on -- every start (so value changes propagate on upgrade). -- Leave empty to keep the default (no robots.txt override). |
 | moodle.service.type | string | `"ClusterIP"` |  |
 | moodle.startupProbe.enabled | bool | `true` |  |
 | moodle.startupProbe.failureThreshold | int | `120` |  |
