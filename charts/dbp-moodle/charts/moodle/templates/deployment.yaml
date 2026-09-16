@@ -225,13 +225,9 @@ spec:
               mountPath: /dbp-moodle/moodledata
               subPath: moodledata
             {{- if .Values.robotsTxt }}
-            # -- Staged read-only outside the webroot; the entrypoint copies it into
-            #    the webroot so it is owned like the rest of the persistent tree
-            #    (a direct subPath mount here would be root:root, fsGroup is not applied
-            #    to ConfigMap files, and would break the non-root permission setup).
+            # -- Staged read-only, copied into the webroot by the entrypoint
             - name: moodle-robots-txt
-              mountPath: /moodleconfig/robots.txt
-              subPath: robots.txt
+              mountPath: /moodleconfig/robots-txt
               readOnly: true
             {{- end }}
             {{- if .Values.extraVolumeMounts }}
