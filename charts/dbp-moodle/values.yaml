@@ -462,7 +462,6 @@ moodle:
   podAnnotations:
     moodle/image: '{{- .Values.image.repository -}}:{{- .Values.image.tag -}}'
     moodleplugins/checksum: '{{- include "dbpMoodle.pluginConfigMap.content" . | sha256sum -}}'
-    robots-txt/checksum: '{{- .Values.dbpMoodle.robotsTxt | sha256sum -}}'
   containerSecurityContext:
     enabled: true
     runAsGroup: 1001
