@@ -349,7 +349,6 @@ The Chart can be deployed without any modification but it is advised to set own 
 | moodle.persistence.existingClaim | string | `"moodle-data"` | If this value is unset, the bitnami/moodle chart generates its own PV & PVC |
 | moodle.podAnnotations.moodle/image | string | `"{{- .Values.image.repository -}}:{{- .Values.image.tag -}}"` |  |
 | moodle.podAnnotations.moodleplugins/checksum | string | `"{{- include \"dbpMoodle.pluginConfigMap.content\" . | sha256sum -}}"` |  |
-| moodle.podAnnotations.robots-txt/checksum | string | `"{{- .Values.dbpMoodle.robotsTxt | sha256sum -}}"` |  |
 | moodle.podSecurityContext.enabled | bool | `true` |  |
 | moodle.readinessProbe.path | string | `"/login/index.php?noredirect=1"` |  |
 | moodle.resources.limits.cpu | int | `6` |  |
