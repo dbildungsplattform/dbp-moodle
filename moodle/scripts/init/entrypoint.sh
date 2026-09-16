@@ -103,6 +103,16 @@ MODULE=dbp info "Replacing config.php file with ours"
 /bin/cp -p /moodleconfig/config-php/config.php /tmp/config.php
 mv /tmp/config.php /dbp-moodle/moodle/config.php
 
+# Copy the custom robots.txt into the webroot. It is staged read-only at
+# /moodleconfig (outside the persistent webroot) and copied in here so that it
+# is owned like the rest of the persistent tree. Running as a plain mount inside
+# the webroot would leave it root:root (fsGroup is not applied to ConfigMap
+# files) and breaks the non-root permission setup during a fresh install.
+if [[ -f /moodleconfig/robots.txt ]]; then
+    MODULE=dbp info "Installing custom robots.txt into the webroot"
+    /bin/cp /moodleconfig/robots.txt /dbp-moodle/moodle/robots.txt
+fi
+
 if [ -f "/tmp/de.zip" ] || [ -f "/tmp/en.zip" ]; then \
     mkdir -p /dbp-moodle/moodledata/lang
     if [ -d /dbp-moodle/moodledata/lang/de ]; then \
