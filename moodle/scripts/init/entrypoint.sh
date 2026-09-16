@@ -105,17 +105,9 @@ mv /tmp/config.php /dbp-moodle/moodle/config.php
 
 # Keep the webroot robots.txt in sync with the configured value. It is staged
 # read-only at /moodleconfig (outside the persistent webroot) and copied in
-# here so that it is owned like the rest of the persistent tree. When no
-# robots.txt is configured, a stale copy left on the volume is removed.
-if [[ -f /moodleconfig/robots-txt/robots.txt ]]; then
-    MODULE=dbp info "Installing custom robots.txt into the webroot"
-    /bin/cp /moodleconfig/robots-txt/robots.txt /dbp-moodle/moodle/robots.txt
-else
-    if [[ -f /dbp-moodle/moodle/robots.txt ]]; then
-        MODULE=dbp info "Removing stale robots.txt from the webroot"
-        rm -f /dbp-moodle/moodle/robots.txt
-    fi
-fi
+# here so that it is owned like the rest of the persistent tree.
+MODULE=dbp info "Installing robots.txt into the webroot"
+/bin/cp /moodleconfig/robots-txt/robots.txt /dbp-moodle/moodle/robots.txt
 
 if [ -f "/tmp/de.zip" ] || [ -f "/tmp/en.zip" ]; then \
     mkdir -p /dbp-moodle/moodledata/lang

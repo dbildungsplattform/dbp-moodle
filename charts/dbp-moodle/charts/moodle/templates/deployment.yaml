@@ -224,12 +224,9 @@ spec:
             - name: moodle-data
               mountPath: /dbp-moodle/moodledata
               subPath: moodledata
-            {{- if .Values.robotsTxt }}
-            # -- Staged read-only, copied into the webroot by the entrypoint
             - name: moodle-robots-txt
               mountPath: /moodleconfig/robots-txt
               readOnly: true
-            {{- end }}
             {{- if .Values.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
@@ -272,7 +269,6 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
-        {{- if .Values.robotsTxt }}
         - name: moodle-robots-txt
           configMap:
             name: moodle-robots-txt
@@ -280,7 +276,6 @@ spec:
               - key: robots.txt
                 path: robots.txt
             defaultMode: 0644
-        {{- end }}
         {{- if .Values.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
         {{- end }}

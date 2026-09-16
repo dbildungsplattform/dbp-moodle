@@ -133,6 +133,10 @@ dbpMoodle:
       memory_limit = 513M
       upload_max_filesize = 201M
       post_max_size = 150M
+  # -- Content of the robots.txt served from the Moodle webroot.
+  # -- Always installed to /dbp-moodle/moodle/robots.txt inside the Moodle
+  # -- container (an empty value results in an empty robots.txt).
+  robotsTxt: ""
 
   # -- Configurations for the optional redis
   redis:
@@ -346,12 +350,6 @@ moodle:
     # -- Debug mode for more detailed moodle installation and log output
     debug: false
   moodleSkipInstall: false
-  # -- Content of a custom robots.txt served from the Moodle webroot.
-  # -- When set to a non-empty value, a ConfigMap is created and its content is
-  # -- installed to /dbp-moodle/moodle/robots.txt inside the Moodle container on
-  # -- every start (so value changes propagate on upgrade).
-  # -- Leave empty to keep the default (no robots.txt override).
-  robotsTxt: ""
   moodleSiteName: "Moodle"
   moodleLang: "de"
   moodleUsername: admin
@@ -464,6 +462,7 @@ moodle:
   podAnnotations:
     moodle/image: '{{- .Values.image.repository -}}:{{- .Values.image.tag -}}'
     moodleplugins/checksum: '{{- include "dbpMoodle.pluginConfigMap.content" . | sha256sum -}}'
+    robots-txt/checksum: '{{- .Values.dbpMoodle.robotsTxt | sha256sum -}}'
   containerSecurityContext:
     enabled: true
     runAsGroup: 1001
