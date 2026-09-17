@@ -3,7 +3,8 @@
 ## unreleased ##
 - **OPS-10912** Update Etherpad major Version
   - Bump Etherpad Version to 3.3.3.0
-  
+- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
+
 ## [1.8.1] - 2026-09-11
 ### Dependencies
 - Update dependencies
