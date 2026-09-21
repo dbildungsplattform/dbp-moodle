@@ -1,4 +1,4 @@
-FROM php:8.2.33-fpm-trixie AS build
+FROM php:8.5.9-fpm-trixie AS build
 USER root
 ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.14"}
 #This is the path moodle will be placed after downloading for our Moodle Update Pipeline
