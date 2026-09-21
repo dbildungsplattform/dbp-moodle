@@ -65,6 +65,12 @@ $CFG->forced_plugin_settings['antivirus_clamav']['tcpsockethost'] = 'moodle-clam
 $CFG->forced_plugin_settings['antivirus_clamav']['tcpsocketport'] = 3310;
 {{- end }}
 
+{{- if and .Values.global.moodlePlugins.qtype_stack.enabled .Values.dbpMoodle.goemaxima.enabled}}
+$CFG->forced_plugin_settings['qtype_stack']['platform'] = 'server';
+$CFG->forced_plugin_settings['qtype_stack']['maximacommandserver'] = 'http://moodle-goemaxima:8080/goemaxima';
+$CFG->forced_plugin_settings['qtype_stack']['maximaversion'] = 'default';
+{{- end }}
+
 require_once(__DIR__ . '/lib/setup.php');
 
 {{- if .Values.dbpMoodle.phpConfig.extendedLogging }}

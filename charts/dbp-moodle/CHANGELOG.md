@@ -1,4 +1,8 @@
 # Changelog
+## Unreleased
+### Changes
+- **DBP-2467** Set required stack-plugin config via code
+  - Set the maximaversion, platform and maximacommandserver values via php-config.
 
 ## [1.8.2] - 2026-09-22
 ### Changes
