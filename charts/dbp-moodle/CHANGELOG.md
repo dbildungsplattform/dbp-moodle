@@ -1,6 +1,7 @@
 # Changelog
 
-## unreleased ##
+## [1.8.2] - 2026-09-22
+### Changes
 - **OPS-10912** Update Etherpad major Version
   - Bump Etherpad Version to 3.3.3.0
 - **DBP-2522** Adjust Backup retention time
