@@ -224,6 +224,9 @@ spec:
             - name: moodle-data
               mountPath: /dbp-moodle/moodledata
               subPath: moodledata
+            - name: moodle-robots-txt
+              mountPath: /moodleconfig/robots-txt
+              readOnly: true
             {{- if .Values.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
@@ -266,6 +269,13 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: moodle-robots-txt
+          configMap:
+            name: moodle-robots-txt
+            items:
+              - key: robots.txt
+                path: robots.txt
+            defaultMode: 0644
         {{- if .Values.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
         {{- end }}

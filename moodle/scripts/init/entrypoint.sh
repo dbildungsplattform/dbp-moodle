@@ -103,6 +103,12 @@ MODULE=dbp info "Replacing config.php file with ours"
 /bin/cp -p /moodleconfig/config-php/config.php /tmp/config.php
 mv /tmp/config.php /dbp-moodle/moodle/config.php
 
+# Keep the webroot robots.txt in sync with the configured value. It is staged
+# read-only at /moodleconfig (outside the persistent webroot) and copied in
+# here so that it is owned like the rest of the persistent tree.
+MODULE=dbp info "Installing robots.txt into the webroot"
+/bin/cp /moodleconfig/robots-txt/robots.txt /dbp-moodle/moodle/robots.txt
+
 if [ -f "/tmp/de.zip" ] || [ -f "/tmp/en.zip" ]; then \
     mkdir -p /dbp-moodle/moodledata/lang
     if [ -d /dbp-moodle/moodledata/lang/de ]; then \

@@ -133,6 +133,10 @@ dbpMoodle:
       memory_limit = 513M
       upload_max_filesize = 201M
       post_max_size = 150M
+  # -- Content of the robots.txt served from the Moodle webroot.
+  # -- Always installed to /dbp-moodle/moodle/robots.txt inside the Moodle
+  # -- container (an empty value results in an empty robots.txt).
+  robotsTxt: ""
 
   # -- Configurations for the optional redis
   redis:
