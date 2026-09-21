@@ -1,3 +1,9 @@
 {{- if and .Values.redis.enabled .Values.valkey.enabled -}}
 {{- fail "Enable either redis or valkey, not both" -}}
 {{- end -}}
+{{- range $i, $object := .Values.extraObjects -}}
+{{- $name := get (get $object "metadata" | default dict) "name" -}}
+{{- if not (and $object.apiVersion $object.kind $name) -}}
+{{- fail (printf "extraObjects[%d]: every object must define apiVersion, kind and metadata.name" $i) -}}
+{{- end -}}
+{{- end -}}

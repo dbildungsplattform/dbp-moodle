@@ -101,6 +101,18 @@ global:
     local_course_reminder:
       enabled: false
 
+# -- List of arbitrary Kubernetes objects to deploy alongside the release.
+# -- Each entry is a full manifest which requires apiVersion, kind and metadata.name.
+# -- namespace defaults to the release namespace unless set in metadata.
+# -- Default labels (app.kubernetes.io/..., helm.sh/chart) are added, user labels take precedence.
+extraObjects: []
+#  - apiVersion: v1
+#    kind: ConfigMap
+#    metadata:
+#      name: my-configmap
+#    data:
+#      key: value
+
 dbpMoodle:
   name: infra
   stage: infra

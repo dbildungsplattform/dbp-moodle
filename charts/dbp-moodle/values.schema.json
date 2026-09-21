@@ -2,6 +2,40 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "extraObjects": {
+      "type": "array",
+      "description": "Arbitrary Kubernetes objects to deploy alongside the release. Each entry is a full manifest.",
+      "items": {
+        "type": "object",
+        "required": ["apiVersion", "kind", "metadata"],
+        "properties": {
+          "apiVersion": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "namespace": {
+                "type": "string"
+              },
+              "labels": {
+                "type": "object"
+              },
+              "annotations": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
     "dbpMoodle": {
       "type": "object",
       "properties": {
