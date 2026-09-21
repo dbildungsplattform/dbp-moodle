@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN set -x \
     && apt-get -y update \
     && apt-get -y install wget python3-pip \
-    && wget https://dl.k8s.io/release/v1.34.2/bin/linux/amd64/kubectl \
+    && wget https://dl.k8s.io/release/v1.34.11/bin/linux/amd64/kubectl \
     && chmod +x kubectl \
     && mv ./kubectl /usr/local/bin/kubectl \
     && wget -qO /usr/share/keyrings/postgres.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \

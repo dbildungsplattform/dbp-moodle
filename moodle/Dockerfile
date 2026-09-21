@@ -1,12 +1,12 @@
-FROM php:8.2.31-fpm-trixie AS build
+FROM php:8.2.33-fpm-trixie AS build
 USER root
-ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.12"}
+ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.14"}
 #This is the path moodle will be placed after downloading for our Moodle Update Pipeline
 ARG MOODLE_PATH="/opt/dbp-moodle/moodle"
 ARG EXTRA_LOCALES=""
 #At the moment Apache will be updated to the latest release as unattended update during the build process
-ARG APACHE_VERSION=${APACHE_VERSION:-"2.4.67-1~deb13u1"}
-ARG APACHE_DOWNLOAD_URL="https://snapshot.debian.org/archive/debian/20260508T024741Z/pool/main/a/apache2"
+ARG APACHE_VERSION=${APACHE_VERSION:-"2.4.68-1~deb13u1"}
+ARG APACHE_DOWNLOAD_URL="https://snapshot.debian.org/archive/debian/20260920T203924Z/pool/main/a/apache2/"
 WORKDIR /
 ARG WITH_ALL_LOCALES="no"
 RUN mkdir /bitnami
@@ -57,8 +57,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- \
     --install-dir=/usr/local/bin --filename=composer
 
 # Install moosh for plugin management
-# Because of current problems with moosh and no new release we use commit hashes. This one is the version bump to 1.38
-RUN curl -L https://github.com/tmuras/moosh/archive/c7674a7b8de77a3205a289c89bed093377a20004.tar.gz -o moosh.tar.gz && \
+# Because of current problems with moosh and no new release we use commit hashes. This one is the version bump to 1.50
+RUN curl -L https://github.com/tmuras/moosh/archive/5338c4d4352e2c993cc9a09f73c99b8ab7d699d0.tar.gz -o moosh.tar.gz && \
     mkdir /moosh && tar -xzvf moosh.tar.gz -C /moosh/ --strip-components=1
 RUN mkdir /.moosh &&\
     chmod 774 /.moosh &&\
