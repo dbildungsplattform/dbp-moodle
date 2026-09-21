@@ -190,7 +190,7 @@ dbpMoodle:
     dump_kind: "full" # Possible values: full, custom
     run_pre_upgrade: true
     # -- Defines the maximum age of a backup before it is deleted
-    retention_time: "6M"
+    retention_time: "1M"
     # -- Defines the maximum age of a full backup before a new full backup is created. The backups in between are incremental
     max_full_backup_age: "1W"
     # -- Provide a List of keys like: gpg_key_names: ["devops", "fallback"]
