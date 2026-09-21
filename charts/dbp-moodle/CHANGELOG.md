@@ -1,10 +1,17 @@
 # Changelog
 
-## unreleased ##
+## [1.8.2] - 2026-09-22
+### Changes
 - **OPS-10912** Update Etherpad major Version
   - Bump Etherpad Version to 3.3.3.0
 - **DBP-2522** Adjust Backup retention time
   - Lower the Retention Time of Backups (Default Value) to 1 month.
+### Dependencies
+- Update dependencies
+  - Updates `php-fpm-trixie` from 8.2.31 to 8.2.33 (image)
+  - Updates `apache` from 2.4.67 to 2.4.68 (image)
+  - Updates `moosh` from 1.45 to 1.50 (image)
+  - Updates `kubectl` from v1.34.2 to v1.34.11 (moodle-tools)
   
 ## [1.8.1] - 2026-09-11
 ### Dependencies
