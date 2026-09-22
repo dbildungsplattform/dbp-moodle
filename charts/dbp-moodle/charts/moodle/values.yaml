@@ -666,7 +666,7 @@ ingress:
   ## the ingress. If the annotation is set explicitly under ingress.annotations it takes
   ## precedence over the generated one.
   ##
-  middlewareAnnotationKey: traefik.ingress.kubernetes.io/router.middleware
+  middlewareAnnotationKey: traefik.ingress.kubernetes.io/router.middlewares
 ## @section Database parameters
 
 ## External database configuration

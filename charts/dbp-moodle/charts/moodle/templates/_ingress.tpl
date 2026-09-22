@@ -31,7 +31,7 @@ service:
 Build the ingress annotation that references the middlewares defined in ingress.middlewares.
 
 Returns a dict with a single key (ingress.middlewareAnnotationKey) whose value is the
-comma-separated list of <namespace>-<middleware name>@kubernetes-crd references in list
+comma-separated list of <namespace>-<middleware name>@kubernetescrd references in list
 order, or an empty dict when no middlewares are defined.
 
 Usage:
@@ -40,7 +40,7 @@ Usage:
 {{- define "moodle.ingress.middlewareAnnotations" -}}
 {{- $refs := list }}
 {{- range $mw := .Values.ingress.middlewares }}
-{{- $refs = append $refs (printf "%s-%s@kubernetes-crd" $.Release.Namespace $mw.name) }}
+{{- $refs = append $refs (printf "%s-%s@kubernetescrd" $.Release.Namespace $mw.name) }}
 {{- end }}
 {{- if $refs }}
 {{- toYaml (dict $.Values.ingress.middlewareAnnotationKey (join ", " $refs)) }}

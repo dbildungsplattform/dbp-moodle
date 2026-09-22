@@ -10,7 +10,7 @@
 - Support for custom Traefik middlewares on the Moodle ingress
   - Added new value `moodle.ingress.middlewares` (list, defaults to empty); each entry takes a `name` and a `spec`
   - Each entry is rendered as a Kubernetes `Middleware` resource (name used verbatim, release namespace, default chart labels)
-  - The generated `traefik.ingress.kubernetes.io/router.middleware` annotation references all middlewares in list order
+  - The generated `traefik.ingress.kubernetes.io/router.middlewares` annotation references all middlewares in list order
   - `moodle.ingress.middlewareApiVersion`, `moodle.ingress.middlewareKind` and `moodle.ingress.middlewareAnnotationKey` provide overridable defaults; `apiVersion`/`kind` can be set per middleware entry
   - If the annotation is set explicitly under `moodle.ingress.annotations` it takes precedence over the generated one
 
