@@ -11,8 +11,13 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 4 }}
   annotations:
-    {{- if or .Values.ingress.annotations .Values.commonAnnotations }}
-    {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.ingress.annotations .Values.commonAnnotations ) "context" . ) }}
+    {{- if or .Values.ingress.annotations .Values.commonAnnotations .Values.ingress.middlewares }}
+    {{- /*
+      common.tplvalues.merge lets the first list item win on a key collision, so the user's
+      ingress.annotations / commonAnnotations are listed before the generated middleware
+      annotation; an explicitly set middlewareAnnotationKey therefore takes precedence.
+    */}}
+    {{- $annotations := include "common.tplvalues.merge" ( dict "values" ( list .Values.ingress.annotations .Values.commonAnnotations (include "moodle.ingress.middlewareAnnotations" .) ) "context" . ) }}
     {{- include "common.tplvalues.render" ( dict "value" $annotations "context" $) | nindent 4 }}
     {{- end }}
 spec:
