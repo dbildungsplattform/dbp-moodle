@@ -3,10 +3,7 @@
 ### Changes
 - **DBP-2467** Set required stack-plugin config via code
   - Set the maximaversion, platform and maximacommandserver values via php-config.
-
-## unreleased ##
-### Changes
-- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
+- **DBP-2524** Support for a custom `robots.txt` served from the  Moodle webroot
   - The content can be set in the values under `dbpMoodle.robotsTxt`
 
 ## [1.8.2] - 2026-09-22
