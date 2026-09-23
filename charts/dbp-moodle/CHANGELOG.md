@@ -4,12 +4,18 @@
 - **DBP-2467** Set required stack-plugin config via code
   - Set the maximaversion, platform and maximacommandserver values via php-config.
 
+## unreleased ##
+### Changes
+- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
+  - The content can be set in the values under `dbpMoodle.robotsTxt`
+
 ## [1.8.2] - 2026-09-22
 ### Changes
 - **OPS-10912** Update Etherpad major Version
   - Bump Etherpad Version to 3.3.3.0
 - **DBP-2522** Adjust Backup retention time
   - Lower the Retention Time of Backups (Default Value) to 1 month.
+
 ### Dependencies
 - Update dependencies
   - Updates `php-fpm-trixie` from 8.2.31 to 8.2.33 (image)
