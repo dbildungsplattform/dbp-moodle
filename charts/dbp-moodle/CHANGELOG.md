@@ -7,12 +7,12 @@
   - Each entry is a full manifest (`apiVersion`, `kind`, `metadata.name`) rendered as-is
   - Objects get the release namespace by default and the default Helm labels (`app.kubernetes.io/...`, `helm.sh/chart`); explicitly set namespace/labels take precedence
   - Malformed entries (missing `apiVersion`, `kind` or `metadata.name`) fail the rendering with a clear error
-- Support for custom Traefik middlewares on the Moodle ingress
-  - Added new value `moodle.ingress.middlewares` (list, defaults to empty); each entry takes a `name` and a `spec`
+- Support for custom Traefik middlewares on the Moodle and Etherpad ingresses
+  - Added new values `moodle.ingress.middlewares` and `etherpadlite.ingress.middlewares` (list, defaults to empty); each entry takes a `name` and a `spec`
   - Each entry is rendered as a Kubernetes `Middleware` resource (name used verbatim, release namespace, default chart labels)
   - The generated `traefik.ingress.kubernetes.io/router.middlewares` annotation references all middlewares in list order
-  - `moodle.ingress.middlewareApiVersion`, `moodle.ingress.middlewareKind` and `moodle.ingress.middlewareAnnotationKey` provide overridable defaults; `apiVersion`/`kind` can be set per middleware entry
-  - If the annotation is set explicitly under `moodle.ingress.annotations` it takes precedence over the generated one
+  - `middlewareApiVersion`, `middlewareKind` and `middlewareAnnotationKey` (under the respective `ingress` section) provide overridable defaults; `apiVersion`/`kind` can be set per middleware entry
+  - If the annotation is set explicitly under `ingress.annotations` it takes precedence over the generated one
 
 ## [1.8.2] - 2026-09-22
 ### Changes

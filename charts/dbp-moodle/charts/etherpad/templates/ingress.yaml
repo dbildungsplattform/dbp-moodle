@@ -13,7 +13,15 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "etherpad.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- $middlewareAnnotations := include "etherpad.ingress.middlewareAnnotations" . | fromYaml }}
+  {{- $annotations := (.Values.ingress.annotations | default dict) | deepCopy }}
+  {{- /* The generated middleware annotation is only added if the user did not set that key, so user annotations take precedence. */}}
+  {{- range $key, $value := $middlewareAnnotations }}
+  {{- if not (hasKey $annotations $key) }}
+  {{- $_ := set $annotations $key $value }}
+  {{- end }}
+  {{- end }}
+  {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
