@@ -4,6 +4,8 @@
 ### Changes
 - **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
   - The content can be set in the values under `dbpMoodle.robotsTxt`
+- **DBP-2521** Support for a custom ingress class for the Etherpad Ingress
+  - The ingress class can be set in the values under `etherpadlite.ingress.ingressClassName`, like the Moodle Ingress
 
 ## [1.8.2] - 2026-09-22
 ### Changes
