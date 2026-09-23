@@ -70,6 +70,10 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
+  # @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  # This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+  # ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ingressClassName: ""
 
 externalDatabase:
   # -- Type of DB to provision, possible values are "postgres"

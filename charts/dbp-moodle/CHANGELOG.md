@@ -1,7 +1,11 @@
 # Changelog
 
-## [Unreleased]
-### Feature
+## unreleased ##
+### Changes
+- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
+  - The content can be set in the values under `dbpMoodle.robotsTxt`
+- **DBP-2521** Support for a custom ingress class for the Etherpad Ingress
+  - The ingress class can be set in the values under `etherpadlite.ingress.ingressClassName`, like the Moodle Ingress
 - Support for deploying arbitrary Kubernetes objects via the chart
   - Added new value `extraObjects` (list, defaults to empty)
   - Each entry is a full manifest (`apiVersion`, `kind`, `metadata.name`) rendered as-is
@@ -20,8 +24,6 @@
   - Bump Etherpad Version to 3.3.3.0
 - **DBP-2522** Adjust Backup retention time
   - Lower the Retention Time of Backups (Default Value) to 1 month.
-- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
-  - The content can be set in the values under `dbpMoodle.robotsTxt`
 
 ### Dependencies
 - Update dependencies
