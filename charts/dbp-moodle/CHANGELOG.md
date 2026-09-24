@@ -1,8 +1,9 @@
 # Changelog
-
-## unreleased ##
+## Unreleased
 ### Changes
-- **DBP-2524** Support for a custom `robots.txt` served from the Moodle webroot
+- **DBP-2467** Set required stack-plugin config via code
+  - Set the maximaversion, platform and maximacommandserver values via php-config.
+- **DBP-2524** Support for a custom `robots.txt` served from the  Moodle webroot
   - The content can be set in the values under `dbpMoodle.robotsTxt`
 - **DBP-2521** Support for a custom ingress class for the Etherpad Ingress
   - The ingress class can be set in the values under `etherpadlite.ingress.ingressClassName`, like the Moodle Ingress
