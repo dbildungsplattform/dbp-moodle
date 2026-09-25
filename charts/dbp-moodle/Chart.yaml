@@ -24,6 +24,12 @@ dependencies:
     repository: https://dbildungsplattform.github.io/helm-charts-registry/
     condition: valkey.enabled
 
+  # Replaced by managed postgres
+  - name: postgresql
+    version: "15.5.38"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+
   - name: cronjob
     alias: moodlecronjob
     version: 0.1.0
@@ -34,6 +40,13 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/cronjob"
     condition: dbpMoodle.backup.enabled
+
+  # replaced by managed postgres
+  - name: postgresql
+    version: "15.5.38"
+    repository: https://charts.bitnami.com/bitnami
+    alias: etherpad-postgresql
+    condition: etherpad-postgresql.enabled
 
   - name: etherpad
     version: 0.1.0
