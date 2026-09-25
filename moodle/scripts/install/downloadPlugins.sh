@@ -94,12 +94,12 @@ download_boost_magnific() {
     # supported-versions metadata ("Moodle 1.9"), so "moosh plugin-download -v 4.5"
     # refuses it. Download that version directly instead. New releases are only
     # distributed via https://eduardokraus.com/marketplace-plugins/plugin/theme_boost_magnific
-    curl -sSfL "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026062801/download" \
+    curl -sSfL "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026080600/download" \
         -o theme_boost_magnific.zip
 }
 
 download_booking() {
-    target_tag="v9.7.4-stable"
+    target_tag="v9.7.10-stable"
 
     git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
     cd booking/ || exit 1
@@ -112,7 +112,7 @@ download_booking() {
 }
 
 download_course_reminder(){
-    target_tag="v1.5.2"
+    target_tag="v1.6.0"
     download_url="https://github.com/krishnaGuptaGit/moodle-local_course_reminder/archive/refs/tags/${target_tag}.zip"
 
     curl -sSfL "${download_url}" -o local_course_reminder.zip
