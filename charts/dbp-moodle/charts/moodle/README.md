@@ -76,6 +76,10 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | ingress.extraTls | list | `[]` |  |
 | ingress.hostname | string | `"moodle.local"` |  |
 | ingress.ingressClassName | string | `""` |  |
+| ingress.middlewareAnnotationKey | string | `"traefik.ingress.kubernetes.io/router.middlewares"` |  |
+| ingress.middlewareApiVersion | string | `"traefik.io/v1alpha1"` |  |
+| ingress.middlewareKind | string | `"Middleware"` |  |
+| ingress.middlewares | list | `[]` |  |
 | ingress.path | string | `"/"` |  |
 | ingress.pathType | string | `"ImplementationSpecific"` |  |
 | ingress.secrets | list | `[]` |  |

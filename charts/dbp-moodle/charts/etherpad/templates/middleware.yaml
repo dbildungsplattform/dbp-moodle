@@ -1,0 +1,13 @@
+{{- if and .Values.ingress.enabled .Values.ingress.middlewares }}
+{{- range $mw := .Values.ingress.middlewares }}
+---
+apiVersion: {{ $mw.apiVersion | default $.Values.ingress.middlewareApiVersion }}
+kind: {{ $mw.kind | default $.Values.ingress.middlewareKind }}
+metadata:
+  name: {{ $mw.name }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels: {{- include "etherpad.labels" $ | nindent 4 }}
+spec:
+  {{- toYaml $mw.spec | nindent 2 }}
+{{- end }}
+{{- end }}

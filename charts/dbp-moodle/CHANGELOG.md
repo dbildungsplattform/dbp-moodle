@@ -7,6 +7,17 @@
   - The content can be set in the values under `dbpMoodle.robotsTxt`
 - **DBP-2521** Support for a custom ingress class for the Etherpad Ingress
   - The ingress class can be set in the values under `etherpadlite.ingress.ingressClassName`, like the Moodle Ingress
+- Support for deploying arbitrary Kubernetes objects via the chart
+  - Added new value `extraObjects` (list, defaults to empty)
+  - Each entry is a full manifest (`apiVersion`, `kind`, `metadata.name`) rendered as-is
+  - Objects get the release namespace by default and the default Helm labels (`app.kubernetes.io/...`, `helm.sh/chart`); explicitly set namespace/labels take precedence
+  - Malformed entries (missing `apiVersion`, `kind` or `metadata.name`) fail the rendering with a clear error
+- Support for custom Traefik middlewares on the Moodle and Etherpad ingresses
+  - Added new values `moodle.ingress.middlewares` and `etherpadlite.ingress.middlewares` (list, defaults to empty); each entry takes a `name` and a `spec`
+  - Each entry is rendered as a Kubernetes `Middleware` resource (name used verbatim, release namespace, default chart labels)
+  - The generated `traefik.ingress.kubernetes.io/router.middlewares` annotation references all middlewares in list order
+  - `middlewareApiVersion`, `middlewareKind` and `middlewareAnnotationKey` (under the respective `ingress` section) provide overridable defaults; `apiVersion`/`kind` can be set per middleware entry
+  - If the annotation is set explicitly under `ingress.annotations` it takes precedence over the generated one
 
 ## [1.8.2] - 2026-09-22
 ### Changes

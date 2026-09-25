@@ -640,6 +640,33 @@ ingress:
   ##             name: http
   ##
   extraRules: []
+  ## @param ingress.middlewares List of middlewares to create as Kubernetes Middleware resources
+  ## and reference on the ingress. Each entry needs a `name` and a `spec`. The `name` is used
+  ## verbatim as the resource name, so it must be unique per namespace. The order of the list
+  ## determines the order in which the middlewares are referenced on the ingress.
+  ## e.g:
+  ## middlewares:
+  ##   - name: rate-limit
+  ##     spec:
+  ##       plugin:
+  ##         name: rate
+  ##         config:
+  ##           rate: "1000"
+  ##
+  middlewares: []
+  ## @param ingress.middlewareApiVersion API version used for the generated Middleware resources.
+  ## Can be overridden per middleware entry by setting `apiVersion` on the entry.
+  ##
+  middlewareApiVersion: traefik.io/v1alpha1
+  ## @param ingress.middlewareKind Kind used for the generated Middleware resources.
+  ## Can be overridden per middleware entry by setting `kind` on the entry.
+  ##
+  middlewareKind: Middleware
+  ## @param ingress.middlewareAnnotationKey Annotation key used to reference the middlewares on
+  ## the ingress. If the annotation is set explicitly under ingress.annotations it takes
+  ## precedence over the generated one.
+  ##
+  middlewareAnnotationKey: traefik.ingress.kubernetes.io/router.middlewares
 ## @section Database parameters
 
 ## External database configuration
