@@ -399,7 +399,7 @@ The Chart can be deployed without any modification but it is advised to set own 
 | postgresql.auth.secretKeys.adminPasswordKey | string | `"db-admin-password"` |  |
 | postgresql.auth.secretKeys.userPasswordKey | string | `"db-password"` | Moodle expects its db password key to be db-password |
 | postgresql.auth.username | string | `"moodle"` |  |
-| postgresql.enabled | bool | `true` |  |
+| postgresql.enabled | bool | `false` |  |
 | postgresql.image.repository | string | `"bitnamilegacy/postgresql"` |  |
 | postgresql.image.tag | string | `"14.18.0-debian-12-r0"` |  |
 | postgresql.metrics.enabled | bool | `true` |  |
