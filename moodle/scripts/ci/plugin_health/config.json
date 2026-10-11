@@ -21,6 +21,118 @@
       "match": "CVE-2026-54733",
       "reason": "false_positive",
       "note": "Betrifft local_o365 (Teams-SSO-Endpunkt), nicht auth_oidc. local_o365 wird nicht ausgeliefert (geprüft 2026-10-07) – neu bewerten, falls es hinzukommt."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-2pqj-h3vj-pqgw",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-579v-mp3v-rrw5",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-6c3j-c64m-qhgq",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-jpcq-cgw6-v4j6",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-q4m3-2j7h-f7xw",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-rmxg-73gg-4p98",
+      "reason": "false_positive",
+      "note": "XSS in jQuery. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-9gj3-hwp5-pmwc",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-gpqq-952q-5327",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-h6gj-6jjq-h8g9",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-hpcf-8vf9-q4gj",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-j7qv-pgf6-hvh4",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-qqxp-xp9v-vvx6",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "local_wunderbyte_table",
+      "check": "vulnerability",
+      "match": "GHSA-wcm2-9c89-wmfm",
+      "reason": "false_positive",
+      "note": "XSS in jQuery UI. Der gebündelte Ordner lib/jquery ist toter Code: Weder local_wunderbyte_table noch mod_booking laden daraus eine Datei, und er enthält keine HTML-/PHP-Seite, die das Skript ausführt (Textsuche in 3.3.2 bzw. mod_booking v9.7.10-stable, geprüft 2026-10-11). Neu bewerten, falls das Plugin lib/jquery einbindet; bei Wunderbyte zur Entfernung gemeldet."
+    },
+    {
+      "component": "qtype_stack",
+      "check": "libraries",
+      "match": "PEGJS autogenerated PHP files",
+      "reason": "false_positive",
+      "note": "Kein Fremdpaket: von STACK selbst aus den eigenen Grammatiken erzeugter Parser-Code unter stack/maximaparser/autogen und stack/cas/castext2/autogen, Versionsangabe „As for STACK“ (geprüft an 4.13.1, 2026-10-11)."
+    },
+    {
+      "component": "qtype_stack",
+      "check": "libraries",
+      "match": "API vendor files",
+      "reason": "false_positive",
+      "note": "Der deklarierte Ordner api/vendor enthält im ausgelieferten Artefakt nur eine .gitignore, keine Bibliothek (geprüft an 4.13.1, 2026-10-11). Tauchen dort Composer-Pakete auf, meldet der Check sie über vendor/composer/installed.json."
+    },
+    {
+      "component": "format_tiles",
+      "check": "github",
+      "match": "kein GitHub-Repo",
+      "reason": "risk_accepted",
+      "note": "Repository liegt auf Bitbucket (dw8/moodle-format_tiles). Commits und Tags werden per Git geprüft; es fehlen nur Archiv-Status und GitHub-Security-Advisories. CVE- und OSV-Abgleich laufen unabhängig davon (bewertet 2026-10-11)."
     }
   ],
   "cve_min_term_length": 5,
@@ -156,6 +268,11 @@
       "match": "guzzle",
       "ecosystem": "Packagist",
       "package": "guzzlehttp/guzzle"
+    },
+    {
+      "match": "^thirdparty/QrCode$|endroid",
+      "ecosystem": "Packagist",
+      "package": "endroid/qr-code"
     },
     {
       "match": "jsxgraph",

@@ -964,7 +964,9 @@ class Checker:
                             if rx.search(lib["name"]) or rx.search(lib["location"])), None)
                 ver = re.sub(r"^[vV]", "", lib["version"].strip())
                 if not hit or not re.match(r"^\d+(\.\d+)*", ver):
-                    unmapped.append(lib["name"] or lib["location"])
+                    entry = f"{lib['name'] or '(ohne Namen)'} ({lib['location'] or 'ohne Ortsangabe'})"
+                    if entry not in unmapped:
+                        unmapped.append(entry)
                     continue
                 ver = re.match(r"^\d+(\.\d+)*", ver).group(0)
                 declared.setdefault(hit, []).append(ver)
@@ -973,9 +975,9 @@ class Checker:
                 seen.add((hit, ver))
                 queries.append({"package": {"ecosystem": hit[0], "name": hit[1]}, "version": ver})
                 owners.append((res, f"{lib['name']} {ver} ({hit[0]}:{hit[1]})"))
-            if unmapped:
-                res.add("UNCHECKED", "libraries", "Bibliotheken ohne OSV-Zuordnung: " + ", ".join(unmapped[:8]) +
-                        (" …" if len(unmapped) > 8 else ""))
+            # one finding per library, so that each can be put on the ignore list on its own
+            for entry in unmapped:
+                res.add("UNCHECKED", "libraries", f"Bibliothek ohne OSV-Zuordnung: {entry}")
             # Libraries found in the artifact itself. The same package and version as a declared
             # library is one query; a different version means thirdpartylibs.xml is wrong.
             undeclared, skew = [], []
@@ -1002,9 +1004,8 @@ class Checker:
             if skew:
                 res.add("WARN", "libraries", "thirdpartylibs.xml nennt eine andere Version als das Artefakt enthält: " +
                         "; ".join(skew[:8]) + (" …" if len(skew) > 8 else ""))
-            if undeclared:
-                res.add("UNCHECKED", "libraries", "Nicht deklarierte Bibliotheken ohne OSV-Zuordnung: " +
-                        ", ".join(undeclared[:8]) + (" …" if len(undeclared) > 8 else ""))
+            for entry in undeclared:
+                res.add("UNCHECKED", "libraries", f"Nicht deklarierte Bibliothek ohne OSV-Zuordnung: {entry}")
         if not queries:
             return
         if self.args.offline:
