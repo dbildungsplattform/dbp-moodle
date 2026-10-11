@@ -638,6 +638,8 @@ class Checker:
 
     def check_artifact(self, res):
         expected_version = res.version
+        # Clear metadata before fetching: even a download failure must leave fixed-version
+        # ignores without a trusted version, rather than falling back to directory metadata.
         res.version = None
         tree = self.fetch_tree(res)
         roots = tree.plugin_roots()
@@ -649,8 +651,11 @@ class Checker:
             res.component = component
         elif component != res.component:
             res.add("FAIL", "artifact", f"Artefakt enthält `{component}` statt `{res.component}`.")
+        # Require a complete numeric assignment; accepting the prefix of an expression such as
+        # "2026020100 - 10000" would invent a version. Never execute PHP from downloaded plugins.
         m = re.search(r"\$plugin->version\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*;", vphp)
         if m:
+            # A different component's version cannot establish that this plugin contains a fix.
             if component == res.component:
                 res.version = m.group(1)
             if expected_version is not None and str(expected_version) != m.group(1):
@@ -939,6 +944,8 @@ class Checker:
         """Findings matching an entry in ignored_findings are downgraded to INFO; the reason stays visible."""
         rules = []
         for i, e in enumerate(self.cfg.get("ignored_findings", [])):
+            # The final two conditions require a numeric fixed_version exactly when reason is
+            # fixed; even an empty or malformed fixed_version is forbidden on other reasons.
             if not isinstance(e, dict) or not all(isinstance(e.get(k), str) and e[k].strip()
                                                   for k in ("component", "check", "note")) \
                     or e.get("reason") not in IGNORE_REASONS or not isinstance(e.get("match", ""), str) \
@@ -958,6 +965,8 @@ class Checker:
             for rule in rules:
                 e = rule[0]
                 if e["component"] == component and e["check"] == f.check and e.get("match", "") in f.message:
+                    # A matching fixed rule is still in use when the shipped version is too old;
+                    # count it before the version gate to avoid a misleading unused-rule warning.
                     rule[1] += 1
                     reason = IGNORE_REASONS[e["reason"]]
                     if e["reason"] == "fixed":
@@ -980,8 +989,11 @@ class Checker:
     # ---------------- baseline (pull requests) ----------------
     @staticmethod
     def finding_key(component, f):
+        # Baseline reports contain JSON dictionaries; current findings are dataclass instances.
         check_name = f["check"] if isinstance(f, dict) else f.check
         message = f["message"] if isinstance(f, dict) else f.message
+        # Only elapsed age may drift without creating a new finding. Normalizing every number
+        # would also collapse distinct CVE/GHSA IDs and affected package versions onto one key.
         if check_name == "maintenance":
             message = re.sub(r"(?<=vor )\d+(?= Tagen\b)", "#", message)
         elif check_name == "plugins.json":

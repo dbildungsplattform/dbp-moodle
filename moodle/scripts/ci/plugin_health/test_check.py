@@ -265,6 +265,8 @@ class Vulnerabilities(unittest.TestCase):
         self.assertEqual(self.run_ignore([self.FIXED], None)[1].severity, "FAIL")  # unknown version: no pass
 
     def test_fixed_uses_artifact_version(self):
+        # Both source types prefill the version from metadata. Keep that value above the fix
+        # threshold while varying the ZIP between an older vulnerable and a matching fixed build.
         for kind in ("directory", "marketplace-pin"):
             for version, severity in (("2025010100", "FAIL"), ("2026020100", "INFO")):
                 with self.subTest(kind=kind, version=version):
@@ -289,6 +291,8 @@ class Vulnerabilities(unittest.TestCase):
                         self.assertFalse(mismatch)
 
     def test_unreadable_artifact_version_cannot_use_fixed_ignore(self):
+        # The arithmetic case starts with a seemingly fixed version but evaluates below the
+        # threshold; a parser that accepts only the numeric prefix would incorrectly ignore it.
         for declaration in ("", "$plugin->version = $unknown;", "$plugin->version = 2026020100 - 10000;"):
             with self.subTest(declaration=declaration):
                 c = make_checker({"ignored_findings": [self.FIXED]})
@@ -311,6 +315,8 @@ class Vulnerabilities(unittest.TestCase):
         with patch.object(c, "fetch_tree", side_effect=OSError("network down")):
             with self.assertRaises(OSError):
                 c.check_artifact(res)
+        # run() continues with repository/CVE checks after artifact errors, so a vulnerability
+        # can still arrive later and must not be waived using the prefilled metadata version.
         c.vulnerability(res, "CVE-1")
         c.results = [res]
         c.apply_ignores()
@@ -470,6 +476,8 @@ class BashCrosscheck(unittest.TestCase):
 
 class Baseline(unittest.TestCase):
     def test_security_ids_and_versions_are_not_normalized(self):
+        # Each pair differs only in digits: the former blanket substitution made their keys
+        # identical. Only the first finding exists in the baseline and may become INFO.
         for old_message, new_message in (
                 ("CVE-2025-1000: Moodle demo XSS", "CVE-2026-9000: Moodle demo XSS"),
                 ("GHSA-ab12-cd34-ef56: XSS", "GHSA-ab98-cd76-ef54: XSS"),
@@ -489,6 +497,7 @@ class Baseline(unittest.TestCase):
     def test_pluginlist_age_is_still_normalized(self):
         old = check.Finding("WARN", "plugins.json", "plugins.json ist 40 Tage alt.")
         new = check.Finding("WARN", "plugins.json", "plugins.json ist 41 Tage alt.")
+        # Exercise the saved-report dictionary and live Finding forms of the same global key.
         self.assertEqual(check.Checker.finding_key("*", old.as_dict()), check.Checker.finding_key("*", new))
 
     def test_known_findings_become_info_new_ones_stay(self):
