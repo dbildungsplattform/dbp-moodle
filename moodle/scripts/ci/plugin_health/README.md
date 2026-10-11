@@ -9,6 +9,7 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 | Bereich | Quelle | Stufe bei Problem |
 |---|---|---|
 | Plugin fehlt in `plugins.json`, keine Version für die Moodle-Version | `pluginList.sh`, `plugins.json`, `Dockerfile` | FAIL |
+| Artefakt-Download antwortet mit HTTP 404 oder 410 | Download-URL | FAIL |
 | MD5 des Downloads passt nicht zu `plugins.json` | Moodle-Verzeichnis | FAIL |
 | Artefakt enthält anderes Plugin als erwartet | `version.php` im ausgelieferten ZIP | FAIL |
 | Artefakt-Version weicht von Metadaten ab oder ist nicht auswertbar | `version.php` im ausgelieferten ZIP | FAIL |
@@ -26,6 +27,8 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 
 Alles, was nicht geprüft werden konnte (Netzwerk, Bitbucket, Bibliothek ohne OSV-Zuordnung …),
 steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg.
+Andere HTTP-Fehler als 404/410, etwa Authentifizierungsfehler, Rate-Limits oder Serverfehler,
+bleiben bei Artefakt-Downloads UNCHECKED.
 
 ## Bei einem Befund
 
@@ -76,9 +79,12 @@ wenn der CVE-Abgleich gelaufen ist); ein ungültiger Eintrag ist FAIL.
 
 In PRs zählen nur **neue** Befunde: Der Basisstand des Ziel-Branches wird mitgeprüft, dort schon
 vorhandene Befunde erscheinen als INFO. Ausnahme: Schwachstellen (`vulnerability`) und fehlende Wartung
-(`maintenance`) bleiben auch dann als WARN sichtbar – sie brechen den PR nicht ab, sollen aber nicht
+(`maintenance`) bleiben auch dann als WARN sichtbar - sie brechen den PR nicht ab, sollen aber nicht
 untergehen. Beim Vergleich werden nur veränderliche Altersangaben
 für Wartung und `plugins.json` normalisiert; Sicherheits-IDs und Versionsnummern bleiben erhalten.
+Interne Prüfskriptfehler (`internal`) werden durch die Baseline niemals herabgestuft. Enthält der
+Basisbericht einen solchen Fehler, wird er mit einer WARN verworfen und alle aktuellen Befunde
+zählen ohne Baseline-Herabstufung.
 
 ## Lokal ausführen
 
@@ -93,7 +99,7 @@ GITHUB_TOKEN=$(gh auth token) python moodle/scripts/ci/plugin_health/check.py \
 
 * Sonderfälle in `downloadPlugins.sh` werden statisch erkannt (git clone + `target_tag`/`target_branch`,
   GitHub-Archive, Marketplace-URLs, `download_github_release`). Neue Muster dort ergeben eine WARN
-  „keine Quelle erkannt“ – dann Parser erweitern.
+  „keine Quelle erkannt“ - dann Parser erweitern.
 * Der CVE-Abgleich ist textbasiert (Komponentenname, Plugin-Name, Repo-Name, Aliase). Er findet
   Kandidaten, keine Gewissheit; deshalb die Pflicht zur Bewertung.
 * Die Versionen in `thirdpartylibs.xml` sind Herstellerangaben und können falsch sein. Deshalb sucht
@@ -104,5 +110,5 @@ GITHUB_TOKEN=$(gh auth token) python moodle/scripts/ci/plugin_health/check.py \
   Plugin-Wurzelverzeichnis zählt nicht, dort stehen überwiegend Build-Werkzeuge.
 * Das ist eine Heuristik: Minifizierte oder umbenannte Bibliotheken ohne Versionskopf und PHP-Bibliotheken
   ohne Composer-Metadaten bleiben unerkannt. Ein erkannter Name ohne Eintrag in `library_map` wird als
-  UNCHECKED gemeldet – dann dort das OSV-Paket ergänzen.
+  UNCHECKED gemeldet - dann dort das OSV-Paket ergänzen.
 * Bitbucket-Repos (`format_tiles`) erhalten keine GitHub-Metadaten.

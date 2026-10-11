@@ -493,6 +493,37 @@ class RepoChecks(unittest.TestCase):
 
 
 class DownloadIntegrity(unittest.TestCase):
+    def test_download_errors_are_classified_and_control_exit_code(self):
+        url = "https://example.invalid/mod_x.zip"
+        cases = [(check.urllib.error.HTTPError(url, status, "download error", {}, None), severity, exit_code)
+                 for status, severity, exit_code in ((404, "FAIL", 1), (410, "FAIL", 1),
+                                                     (401, "UNCHECKED", 0), (403, "UNCHECKED", 0),
+                                                     (429, "UNCHECKED", 0), (500, "UNCHECKED", 0),
+                                                     (503, "UNCHECKED", 0))]
+        cases += [(check.urllib.error.URLError("network down"), "UNCHECKED", 0),
+                  (TimeoutError("timed out"), "UNCHECKED", 0)]
+        directory = {"timestamp": int(check.TODAY.timestamp()), "plugins": [{"component": "mod_x", "versions": [
+            {"version": "2026010100", "downloadurl": url, "supportedmoodles": [{"release": "4.5"}]}]}]}
+        for error, severity, exit_code in cases:
+            with self.subTest(error=str(error)):
+                c = make_checker({}, moodle_version="4.5.14")
+                self.addCleanup(shutil.rmtree, c.work)
+                with patch.object(check, "Checker", return_value=c), \
+                        patch.object(check, "read_text", return_value=""), \
+                        patch.object(check, "read_json", side_effect=[{}, directory]), \
+                        patch.object(check, "parse_bash_arrays", return_value=({"moodle_plugin_list": ["mod_x"]}, {})), \
+                        patch.object(check, "parse_download_script", return_value=([], {}, [])), \
+                        patch.object(check, "http_get", side_effect=error), \
+                        patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": ""}), \
+                        patch("sys.stdout", new_callable=io.StringIO):
+                    result = check.main(["--work-dir", c.work])
+                self.assertEqual(result, exit_code)
+                self.assertEqual(len(c.results), 1)
+                findings = [f for f in c.results[0].findings if f.check == "artifact"]
+                self.assertEqual(len(findings), 1)
+                self.assertEqual(findings[0].severity, severity)
+                self.assertIsNone(c.results[0].version)
+
     def test_md5_mismatch_fails(self):
         c = make_checker({})
         data = zip_bytes({"x/version.php": "<?php $plugin->component = 'mod_x';"})

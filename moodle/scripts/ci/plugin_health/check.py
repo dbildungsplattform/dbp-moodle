@@ -536,6 +536,9 @@ class Checker:
                 continue
             try:
                 self.check_artifact(res)
+            except urllib.error.HTTPError as e:
+                severity = "FAIL" if e.code in (404, 410) else "UNCHECKED"
+                res.add(severity, "artifact", f"Artefakt nicht abrufbar: {e}")
             except Exception as e:  # report, never hide
                 res.add("UNCHECKED", "artifact", f"Artefakt nicht prüfbar: {e}")
             if res.repo_url:
