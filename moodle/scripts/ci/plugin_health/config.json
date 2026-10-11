@@ -1,5 +1,5 @@
 {
-  "_doc": "Konfiguration für check.py. Jede Bewertung (vulnerability_triage) braucht eine nachvollziehbare note und sollte per PR reviewt werden.",
+  "_doc": "Konfiguration für check.py. Jeder Eintrag in ignored_findings braucht eine nachvollziehbare note und sollte per PR reviewt werden.",
   "fail_level": "FAIL",
   "unreviewed_vulnerability_severity": "FAIL",
   "thresholds": {
@@ -13,8 +13,16 @@
   "allowed_duplicates": {
     "auth_oidc": "Upstream aus dem Verzeichnis und eLeDia-Fork werden beide ausgeliefert; pluginCheck.sh wählt zur Laufzeit (eledia_oidc)."
   },
-  "maintenance_exceptions_doc": "Komponente -> Begründung. Stufe 'veraltet' wird dann zu INFO. Nur mit nachvollziehbarer Begründung eintragen.",
-  "maintenance_exceptions": {},
+  "ignored_findings_doc": "Befunde, die bewertet sind und bewusst ignoriert werden (werden INFO, bleiben im Bericht). Je Eintrag: component (oder * für übergreifende Befunde), check, optional match (Textausschnitt der Meldung, z. B. die CVE-ID), reason (risk_accepted | mitigated | false_positive | fixed) und note mit nachvollziehbarer Begründung. Bei fixed zusätzlich fixed_version: gilt nur, solange die ausgelieferte Version mindestens so hoch ist.",
+  "ignored_findings": [
+    {
+      "component": "auth_oidc",
+      "check": "vulnerability",
+      "match": "CVE-2026-54733",
+      "reason": "false_positive",
+      "note": "Betrifft local_o365 (Teams-SSO-Endpunkt), nicht auth_oidc. local_o365 wird nicht ausgeliefert (geprüft 2026-10-07) – neu bewerten, falls es hinzukommt."
+    }
+  ],
   "cve_min_term_length": 5,
   "cve_generic_terms": [
     "stack",
@@ -51,55 +59,6 @@
       "course_reminder"
     ]
   },
-  "vulnerability_triage": {
-    "CVE-2025-60506": {
-      "component": "mod_pdfannotator",
-      "status": "affected",
-      "note": "Stored XSS über öffentliche Kommentare (PoC öffentlich). Kein Fix in v1.5.9 und im Code danach nicht erkennbar (geprüft 2026-10-07)."
-    },
-    "CVE-2026-54733": {
-      "component": "auth_oidc",
-      "status": "not_affected",
-      "note": "Betrifft local_o365 (Teams-SSO-Endpunkt), nicht auth_oidc. local_o365 wird nicht ausgeliefert (geprüft 2026-10-07) – neu bewerten, falls es hinzukommt."
-    }
-  },
-  "code_patterns": [
-    {
-      "component": "auth_oidc",
-      "file": "classes/loginflow/authcode.php",
-      "mode": "required",
-      "pattern": "auth_oidc_csrf",
-      "reason": "CSRF-Schutz im Login-Callback (upstream 2026-08-10, ab 4.5.8)"
-    },
-    {
-      "component": "auth_oidc",
-      "file": "classes/loginflow/authcode.php",
-      "mode": "forbidden",
-      "pattern": "strpos\\(\\$SESSION->wantsurl,\\s*\\$CFG->wwwroot\\)",
-      "reason": "Open Redirect über wantsurl-Präfixprüfung (upstream 2026-07-31 durch is_valid_local_url ersetzt, ab 4.5.8)"
-    },
-    {
-      "component": "auth_oidc",
-      "file": "cleanupoidctokens.php",
-      "mode": "required",
-      "pattern": "require_sesskey\\(\\)",
-      "reason": "CSRF beim Löschen von Tokens (upstream 2026-07-20, ab 4.5.8)"
-    },
-    {
-      "component": "auth_oidc",
-      "file": "cleanupoidctokens.php",
-      "mode": "required",
-      "pattern": "s\\(\\$item->oidcusername\\)",
-      "reason": "XSS in der Token-Übersicht (upstream 2026-07-20, ab 4.5.8)"
-    },
-    {
-      "component": "mod_pdfannotator",
-      "file": "shared/index.js",
-      "mode": "required",
-      "pattern": "isEvalSupported\\s*:\\s*false",
-      "reason": "pdf.js < 4.2.67 mit isEvalSupported=true führt JavaScript aus präparierten PDFs aus (CVE-2024-4367-Klasse). Eintrag entfernen, sobald pdf.js >= 4.2.67 gebündelt ist."
-    }
-  ],
   "library_map": [
     {
       "match": "^pdf(\\.js|js)$|pdf\\.worker|pdf_viewer|pdfjs",

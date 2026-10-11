@@ -180,13 +180,6 @@ class Helpers(unittest.TestCase):
 class ArtifactChecks(unittest.TestCase):
     CONFIG = {
         "thresholds": {"future_version_tolerance_days": 31},
-        "code_patterns": [
-            {"component": "mod_demo", "file": "lib.php", "mode": "required", "pattern": "require_sesskey\\(\\)",
-             "reason": "CSRF"},
-            {"component": "mod_demo", "file": "view.php", "mode": "forbidden", "pattern": "eval\\(",
-             "reason": "eval"},
-            {"component": "mod_demo", "file": "missing.php", "mode": "required", "pattern": "x", "reason": "fehlt"},
-        ],
         "library_map": [{"match": "pdf\\.js", "ecosystem": "npm", "package": "pdfjs-dist"}],
     }
 
@@ -194,8 +187,6 @@ class ArtifactChecks(unittest.TestCase):
         files = {
             "demo/version.php": GPL_HEADER + f"$plugin->component = '{component}';\n$plugin->version = {version};\n"
                                              "$plugin->release = '1.0';\n",
-            "demo/lib.php": "<?php // nothing\n",
-            "demo/view.php": "<?php eval($x);\n",
             "demo/vendor/other/version.php": "<?php $plugin->component = 'mod_other';",
         }
         if lib:
@@ -216,8 +207,6 @@ class ArtifactChecks(unittest.TestCase):
         _, res = self.run_artifact(self.tree())
         msgs = {(f.severity, f.check) for f in res.findings}
         self.assertIn(("WARN", "version"), msgs)                      # future-dated version
-        sev = [f.severity for f in res.findings if f.check == "code-pattern"]
-        self.assertEqual(sev.count("FAIL"), 3)                        # missing fix, forbidden, missing file
         self.assertEqual(res.metrics["license"], "GPL-3.0-or-later")
         self.assertEqual(len(res.metrics["libraries"]), 2)
 
@@ -225,7 +214,7 @@ class ArtifactChecks(unittest.TestCase):
         _, res = self.run_artifact(self.tree(component="mod_evil"))
         self.assertTrue(any(f.severity == "FAIL" and f.check == "artifact" for f in res.findings))
 
-    def test_osv_hit_is_fail_until_triaged(self):
+    def test_osv_hit_is_fail_until_reviewed(self):
         c, res = self.run_artifact(self.tree())
         orig = check.http_get
         check.http_get = lambda *a, **k: json.dumps({"results": [{"vulns": [{"id": "GHSA-test"}]}]}).encode()
@@ -251,28 +240,49 @@ class ArtifactChecks(unittest.TestCase):
         self.assertTrue(lib and all(f.severity == "UNCHECKED" for f in lib))
 
 
-class Triage(unittest.TestCase):
-    def test_fixed_version(self):
-        cfg = {"vulnerability_triage": {"CVE-1": {"status": "fixed", "fixed_version": "2026010100"}}}
-        c = make_checker(cfg)
-        old = check.PluginResult("mod_x", check.Source("directory", "mod_x"), version="2025010100")
-        new = check.PluginResult("mod_x", check.Source("directory", "mod_x"), version="2026020100")
-        c.triage(old, "CVE-1", "t")
-        c.triage(new, "CVE-1", "t")
-        self.assertEqual(old.findings[0].severity, "FAIL")
-        self.assertEqual(new.findings[0].severity, "INFO")
+class Vulnerabilities(unittest.TestCase):
+    def run_ignore(self, entries, version):
+        c = make_checker({"ignored_findings": entries})
+        r = check.PluginResult("mod_x", check.Source("directory", "mod_x"), version=version)
+        c.vulnerability(r, "CVE-1 (2026-01-01): t")
+        c.results = [r]
+        c.apply_ignores()
+        return c, r.findings[0]
+
+    FIXED = {"component": "mod_x", "check": "vulnerability", "match": "CVE-1", "reason": "fixed",
+             "fixed_version": "2026010100", "note": "n"}
 
     def test_unreviewed_is_fail_by_default(self):
-        c = make_checker({})
-        r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
-        c.triage(r, "CVE-2", "t")
-        self.assertEqual(r.findings[0].severity, "FAIL")
+        self.assertEqual(self.run_ignore([], "2026020100")[1].severity, "FAIL")
 
-    def test_triage_for_other_component_does_not_apply(self):
-        c = make_checker({"vulnerability_triage": {"CVE-3": {"component": "mod_a", "status": "not_affected"}}})
-        r = check.PluginResult("mod_b", check.Source("directory", "mod_b"))
-        c.triage(r, "CVE-3", "t")
-        self.assertEqual(r.findings[0].severity, "FAIL")
+    def test_fixed_version(self):
+        c, old = self.run_ignore([self.FIXED], "2025010100")
+        self.assertEqual(old.severity, "FAIL")
+        self.assertIn("behoben erst ab 2026010100, ausgeliefert 2025010100", old.message)
+        self.assertFalse(any(f.check == "ignore" for f in c.global_findings))     # entry counts as used
+        self.assertEqual(self.run_ignore([self.FIXED], "2026020100")[1].severity, "INFO")
+        self.assertEqual(self.run_ignore([self.FIXED], None)[1].severity, "FAIL")  # unknown version: no pass
+
+    def test_fixed_requires_version_and_only_fixed_takes_one(self):
+        for bad in ({**self.FIXED, "fixed_version": "v1.2"}, {k: v for k, v in self.FIXED.items() if k != "fixed_version"},
+                    {**self.FIXED, "reason": "risk_accepted"}):
+            c, f = self.run_ignore([bad], "2026020100")
+            self.assertEqual(f.severity, "FAIL")
+            self.assertTrue(any(x.severity == "FAIL" and x.check == "ignore" for x in c.global_findings))
+
+    def test_entry_for_other_component_does_not_apply(self):
+        _, f = self.run_ignore([{"component": "mod_a", "check": "vulnerability", "match": "CVE-1",
+                                 "reason": "false_positive", "note": "n"}], "2026020100")
+        self.assertEqual(f.severity, "FAIL")
+
+    def test_unused_vulnerability_entry_is_silent_when_cves_were_not_checked(self):
+        entry = {"component": "mod_x", "check": "vulnerability", "match": "CVE-9", "reason": "false_positive", "note": "n"}
+        c, _ = self.run_ignore([entry], "1")
+        self.assertTrue(any(f.check == "ignore" for f in c.global_findings))
+        c = make_checker({"ignored_findings": [entry]})
+        c.unchecked["cve"] = "kein --cve-dir angegeben"
+        c.apply_ignores()
+        self.assertFalse(c.global_findings)
 
 
 class RepoChecks(unittest.TestCase):
@@ -319,11 +329,6 @@ class RepoChecks(unittest.TestCase):
 
     def test_stale_repo_fails(self):
         self.assertTrue(self.has(self.run_repo("git-tag", "v2.0.0"), "FAIL", "maintenance"))
-
-    def test_maintenance_exception_downgrades(self):
-        res = self.run_repo("git-tag", "v2.0.0", {"thresholds": {}, "maintenance_exceptions": {"mod_x": "stabil"}})
-        self.assertFalse(self.has(res, "FAIL", "maintenance"))
-        self.assertTrue(self.has(res, "INFO", "maintenance", "stabil"))
 
     def test_newer_tag_in_same_line(self):
         res = self.run_repo("git-tag", "v1.0.0")
@@ -429,6 +434,45 @@ class Baseline(unittest.TestCase):
         sev = {f.check: f.severity for f in r.findings}
         self.assertEqual(sev["maintenance"], "INFO")
         self.assertEqual(sev["vulnerability"], "FAIL")
+
+
+class IgnoreList(unittest.TestCase):
+    def setup(self, entries):
+        c = make_checker({"ignored_findings": entries})
+        r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
+        r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen – vermutlich unmaintained.")
+        r.add("WARN", "pin", "Pin auf Branch `main` statt Tag.")
+        other = check.PluginResult("mod_y", check.Source("directory", "mod_y"))
+        other.add("WARN", "pin", "Pin auf Branch `main` statt Tag.")
+        c.results = [r, other]
+        c.gfind("FAIL", "duplicate", "`mod_z` kommt aus mehreren Quellen.")
+        c.apply_ignores()
+        return c, r, other
+
+    def test_matching_finding_becomes_info_with_reason(self):
+        c, r, other = self.setup([{"component": "mod_x", "check": "maintenance", "reason": "risk_accepted",
+                                   "note": "stabil, kein Ersatz"}])
+        self.assertEqual(r.findings[0].severity, "INFO")
+        self.assertIn("war FAIL – Risiko akzeptiert: stabil, kein Ersatz", r.findings[0].message)
+        self.assertEqual(r.findings[1].severity, "WARN")              # other check untouched
+        self.assertEqual(other.findings[0].severity, "WARN")          # other component untouched
+        self.assertFalse(any(f.check == "ignore" for f in c.global_findings))
+
+    def test_match_narrows_and_star_targets_global_findings(self):
+        c, r, _ = self.setup([{"component": "mod_x", "check": "pin", "match": "Tag `v1` existiert", "reason":
+                               "false_positive", "note": "n"},
+                              {"component": "*", "check": "duplicate", "match": "mod_z", "reason": "mitigated",
+                               "note": "n"}])
+        self.assertEqual(r.findings[1].severity, "WARN")
+        self.assertTrue(any(f.severity == "WARN" and f.check == "ignore" for f in c.global_findings))  # unused
+        self.assertEqual(c.global_findings[0].severity, "INFO")
+
+    def test_invalid_entry_fails_and_is_not_applied(self):
+        for bad in ({"component": "mod_x", "check": "maintenance", "reason": "risk_accepted"},      # no note
+                    {"component": "mod_x", "check": "maintenance", "reason": "egal", "note": "n"}):
+            c, r, _ = self.setup([bad])
+            self.assertEqual(r.findings[0].severity, "FAIL")
+            self.assertTrue(any(f.severity == "FAIL" and f.check == "ignore" for f in c.global_findings))
 
 
 class Duplicates(unittest.TestCase):

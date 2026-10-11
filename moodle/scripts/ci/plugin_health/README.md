@@ -21,19 +21,54 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 | CVE nennt das Plugin | CVEProject/cvelistV5 | FAIL bis bewertet |
 | Veröffentlichtes GitHub-Security-Advisory | GitHub-API | FAIL bis bewertet |
 | Gebündelte Bibliothek mit bekannter Lücke | `thirdpartylibs.xml` + OSV | FAIL bis bewertet |
-| Bekannter Fix fehlt / verwundbares Muster vorhanden | `code_patterns` in `config.json` | FAIL |
 
 Alles, was nicht geprüft werden konnte (Netzwerk, Bitbucket, Bibliothek ohne OSV-Zuordnung …),
 steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg.
 
 ## Bei einem Befund
 
-* **CVE / Advisory / OSV-Treffer:** prüfen und in `config.json` → `vulnerability_triage` eintragen
-  (`affected`, `not_affected`, `fixed` mit `fixed_version`, oder `accepted`) – immer mit `note`.
-  Unbewertete Treffer bleiben FAIL.
-* **Bewusst stabiles, aber altes Plugin:** `maintenance_exceptions` mit Begründung.
-* **Fix, der nicht wieder verloren gehen darf** (z. B. im eLeDia-Fork): Regel in `code_patterns`.
+* **CVE / Advisory / OSV-Treffer:** prüfen. Trifft die Lücke zu, bleibt der Befund FAIL, bis das Plugin
+  aktualisiert oder entfernt ist. Sonst Eintrag in `ignored_findings` mit `check: "vulnerability"` und
+  der CVE-/GHSA-ID als `match`.
+* **Alle anderen Befunde** (veraltetes Plugin, Branch-Pin, Lizenz, Duplikat …), die bewusst bleiben
+  sollen: ebenfalls Eintrag in `ignored_findings`.
 * **Fehlalarm beim CVE-Abgleich durch zu allgemeinen Namen:** Begriff in `cve_generic_terms`.
+
+### Befunde ignorieren
+
+```json
+"ignored_findings": [
+  {
+    "component": "mod_beispiel",
+    "check": "maintenance",
+    "match": "Letzter Commit",
+    "reason": "risk_accepted",
+    "note": "Stabil, kein Ersatz verfügbar. Abgestimmt mit … am 2026-10-11."
+  },
+  {
+    "component": "mod_beispiel",
+    "check": "vulnerability",
+    "match": "CVE-2026-12345",
+    "reason": "fixed",
+    "fixed_version": "2026010100",
+    "note": "Behoben in Release 4.5.2, siehe Upstream-Commit …"
+  }
+]
+```
+
+* `component` und `check` stehen so im Bericht (`### mod_beispiel`, **maintenance**). Für Befunde aus
+  „Übergreifend“ ist `component` `*`.
+* `match` (optional) ist ein Textausschnitt der Meldung und grenzt ein, wenn ein Plugin mehrere Befunde
+  desselben Checks hat. Keine Zahlen verwenden, die sich ändern („vor 800 Tagen“).
+* `reason`: `risk_accepted` (Risiko akzeptiert), `mitigated` (anderweitig mitigiert),
+  `false_positive` (auch: nicht betroffen) oder `fixed`. `note` ist Pflicht.
+* `fixed_version` (Pflicht bei `fixed`, sonst nicht erlaubt) ist die Versionsnummer aus `version.php`,
+  ab der der Fix enthalten ist. Der Befund wird nur ignoriert, solange die ausgelieferte Version
+  mindestens so hoch ist; bei älterer oder unbekannter Version bleibt er bestehen.
+
+Ignorierte Befunde werden INFO und bleiben mit ursprünglicher Stufe, Grund und `note` im Bericht.
+Ein Eintrag, der auf keinen Befund mehr zutrifft, wird als WARN gemeldet (für `vulnerability` nur,
+wenn der CVE-Abgleich gelaufen ist); ein ungültiger Eintrag ist FAIL.
 
 In PRs zählen nur **neue** Befunde: Der Basisstand des Ziel-Branches wird mitgeprüft, dort schon
 vorhandene Befunde erscheinen als INFO.

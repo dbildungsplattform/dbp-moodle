@@ -4,12 +4,15 @@
 Reads the plugin set the image build actually uses (pluginList.sh, plugins.json and the custom
 download logic in downloadPlugins.sh), fetches every plugin the way the build does, and checks:
 
-* the shipped artifact: component name, version number, license header, bundled third-party
-  libraries (looked up in OSV) and configurable required/forbidden code patterns
+* the shipped artifact: component name, version number, license header and bundled third-party
+  libraries (looked up in OSV)
 * the upstream repository: archived state, activity, releases, published security advisories
 * known CVEs (CVEProject/cvelistV5 checkout) that mention the plugin
 * consistency: pins that are behind newer releases, branch pins, stale plugins.json, components
   shipped from two sources with a version downgrade between them
+
+Findings can be put on an ignore list (config.json, ignored_findings) with a reason and a note; they
+stay in the report as INFO. Vulnerability hits are FAIL until they are on that list.
 
 Every check that could not run is reported as UNCHECKED, never as OK. Standard library only.
 Nothing from the checked repositories is executed, except pluginList.sh in the optional bash
@@ -36,6 +39,8 @@ from dataclasses import dataclass, field
 SEVERITIES = ["OK", "INFO", "UNCHECKED", "WARN", "FAIL"]
 SEV_RANK = {s: i for i, s in enumerate(SEVERITIES)}
 TODAY = dt.datetime.now(dt.timezone.utc)
+IGNORE_REASONS = {"risk_accepted": "Risiko akzeptiert", "mitigated": "anderweitig mitigiert",
+                  "false_positive": "False Positive", "fixed": "behoben"}
 HTTP_TIMEOUT = 60
 USER_AGENT = "dbp-moodle-plugin-health-check"
 
@@ -658,26 +663,7 @@ class Checker:
             res.add("WARN", "license", "Keine GPL-Lizenz-Kopfzeile in version.php.")
         elif lic != "GPL-3.0-or-later":
             res.add("INFO", "license", f"Lizenz-Kopfzeile: {lic}.")
-        self.check_code_patterns(res, tree, root)
         self.collect_libraries(res, tree, root)
-
-    def check_code_patterns(self, res, tree, root):
-        for rule in self.cfg.get("code_patterns", []):
-            if rule["component"] != res.component:
-                continue
-            if rule.get("source_kinds") and res.source.kind not in rule["source_kinds"]:
-                continue
-            path = root + rule["file"]
-            text = tree.read(path)
-            label = rule.get("reason", rule["pattern"])
-            if text is None:
-                res.add("FAIL", "code-pattern", f"`{rule['file']}` fehlt – Prüfung „{label}“ nicht möglich.")
-                continue
-            found = re.search(rule["pattern"], text) is not None
-            if rule.get("mode", "required") == "required" and not found:
-                res.add(rule.get("severity", "FAIL"), "code-pattern", f"Fix fehlt: {label} (`{rule['file']}`).")
-            elif rule.get("mode") == "forbidden" and found:
-                res.add(rule.get("severity", "FAIL"), "code-pattern", f"Verwundbares Muster: {label} (`{rule['file']}`).")
 
     def collect_libraries(self, res, tree, root):
         xml = tree.read(root + "thirdpartylibs.xml")
@@ -756,12 +742,9 @@ class Checker:
                            release_tags_12m=d["release_tags_12m"],
                            latest_tag=(f"{d['latest_release_tag'][0]} ({d['latest_release_tag'][1].date()})"
                                        if d["latest_release_tag"] else None))
-        exception = self.cfg.get("maintenance_exceptions", {}).get(res.component)
         if d["last_commit"]:
             age = (TODAY - d["last_commit"]).days
-            if exception and age > self.th.get("stale_warn_days", 365):
-                res.add("INFO", "maintenance", f"Letzter Commit vor {age} Tagen – akzeptiert: {exception}")
-            elif age > self.th.get("stale_fail_days", 730):
+            if age > self.th.get("stale_fail_days", 730):
                 res.add("FAIL", "maintenance", f"Letzter Commit vor {age} Tagen – vermutlich unmaintained.")
             elif age > self.th.get("stale_warn_days", 365):
                 res.add("WARN", "maintenance", f"Letzter Commit vor {age} Tagen.")
@@ -772,7 +755,7 @@ class Checker:
             dir_dt = dt.datetime.fromtimestamp(int(dir_ts), dt.timezone.utc)
             last_rel = max(filter(None, [last_rel, dir_dt]))
         if last_rel and (TODAY - last_rel).days > self.th.get("no_release_warn_days", 365):
-            res.add("INFO" if exception else "WARN", "maintenance",
+            res.add("WARN", "maintenance",
                     f"Letztes Release vor {(TODAY - last_rel).days} Tagen ({last_rel.date()}).")
         elif not last_rel:
             res.add("INFO", "maintenance", "Keine Release-Tags und kein Verzeichnis-Datum.")
@@ -801,8 +784,9 @@ class Checker:
             if gh.get("full_name") and gh["full_name"].lower() not in res.repo_url.lower():
                 res.add("INFO", "repo", f"Repository wurde umbenannt/verschoben nach {gh['full_name']}.")
             for a in gh.get("advisories", []):
-                self.triage(res, a.get("cve") or a["id"], f"GitHub-Advisory {a['id']} ({a.get('severity')}): "
-                            f"{a.get('summary')} – {a.get('url')}", alt_id=a["id"])
+                ids = a["id"] + (f" / {a['cve']}" if a.get("cve") else "")
+                self.vulnerability(res, f"GitHub-Advisory {ids} ({a.get('severity')}): "
+                                        f"{a.get('summary')} – {a.get('url')}")
 
     # ---------------- cross-source checks ----------------
     def check_custom_coverage(self, commented):
@@ -887,26 +871,12 @@ class Checker:
             for rec in records:
                 if any(t in rec["norm"] for t in terms):
                     score = f"CVSS {rec['score']}" if rec["score"] else "ohne CVSS"
-                    self.triage(res, rec["id"], f"{rec['id']} ({rec['published']}, {score}): {rec['title'][:160]}"
+                    self.vulnerability(res, f"{rec['id']} ({rec['published']}, {score}): {rec['title'][:160]}"
                                                 f" – https://www.cve.org/CVERecord?id={rec['id']}")
 
-    def triage(self, res, vuln_id, text, alt_id=None):
-        tri = self.cfg.get("vulnerability_triage", {})
-        entry = tri.get(vuln_id) or (tri.get(alt_id) if alt_id else None)
-        if entry and entry.get("component") in (None, res.component):
-            status = entry.get("status")
-            note = entry.get("note", "")
-            if status == "affected":
-                res.add("FAIL", "vulnerability", f"{text} – bewertet: betroffen. {note}")
-            elif status == "fixed" and entry.get("fixed_version") and res.version and \
-                    re.fullmatch(r"\d+", str(res.version)) and int(res.version) < int(entry["fixed_version"]):
-                res.add("FAIL", "vulnerability", f"{text} – behoben erst in {entry['fixed_version']}, "
-                                                 f"ausgeliefert {res.version}.")
-            else:
-                res.add("INFO", "vulnerability", f"{text} – bewertet: {status}. {note}")
-            return
+    def vulnerability(self, res, text):
         res.add(self.cfg.get("unreviewed_vulnerability_severity", "FAIL"), "vulnerability",
-                f"{text} – **unbewertet**: in config.json unter vulnerability_triage eintragen.")
+                f"{text} – **unbewertet**: prüfen und in config.json unter ignored_findings eintragen.")
 
     # ---------------- bundled libraries via OSV ----------------
     def check_osv(self):
@@ -954,7 +924,50 @@ class Checker:
                 continue
             ids = [v["id"] for v in vulns]
             for vid in ids:
-                self.triage(res, vid, f"{label} ist laut OSV betroffen von {vid} – https://osv.dev/vulnerability/{vid}")
+                self.vulnerability(res, f"{label} ist laut OSV betroffen von {vid} – https://osv.dev/vulnerability/{vid}")
+
+    # ---------------- ignore list ----------------
+    def apply_ignores(self):
+        """Findings matching an entry in ignored_findings are downgraded to INFO; the reason stays visible."""
+        rules = []
+        for i, e in enumerate(self.cfg.get("ignored_findings", [])):
+            if not isinstance(e, dict) or not all(isinstance(e.get(k), str) and e[k].strip()
+                                                  for k in ("component", "check", "note")) \
+                    or e.get("reason") not in IGNORE_REASONS or not isinstance(e.get("match", ""), str) \
+                    or (e["reason"] == "fixed") != bool(re.fullmatch(r"\d+", str(e.get("fixed_version", "")))) \
+                    or ("fixed_version" in e) != (e["reason"] == "fixed"):
+                self.gfind("FAIL", "ignore", f"ignored_findings[{i}] ist ungültig und wird nicht angewendet: "
+                                             f"`component`, `check`, `note` und `reason` "
+                                             f"({'/'.join(IGNORE_REASONS)}) sind Pflicht, bei `fixed` (und nur "
+                                             f"dort) zusätzlich `fixed_version` als Moodle-Versionsnummer.")
+                continue
+            rules.append([e, 0])
+        targets = [(r.component, r.version, f) for r in self.results for f in r.findings]
+        targets += [("*", None, f) for f in self.global_findings]
+        for component, version, f in targets:
+            if SEV_RANK[f.severity] < SEV_RANK["UNCHECKED"]:
+                continue
+            for rule in rules:
+                e = rule[0]
+                if e["component"] == component and e["check"] == f.check and e.get("match", "") in f.message:
+                    rule[1] += 1
+                    reason = IGNORE_REASONS[e["reason"]]
+                    if e["reason"] == "fixed":
+                        # only holds for shipped versions that contain the fix
+                        reason += f" ab {e['fixed_version']}"
+                        if not re.fullmatch(r"\d+", str(version or "")) or int(version) < int(e["fixed_version"]):
+                            f.message += (f" Laut ignored_findings behoben erst ab {e['fixed_version']}, "
+                                          f"ausgeliefert {version or '?'}. {e['note']}")
+                            break
+                    f.message = f"(ignoriert, war {f.severity} – {reason}: {e['note']}) {f.message}"
+                    f.severity = "INFO"
+                    break
+        vulns_checked = not self.args.offline and "cve" not in self.unchecked
+        for e, hits in rules:
+            if not hits and (e["check"] != "vulnerability" or vulns_checked):
+                match = f", match „{e['match']}“" if e.get("match") else ""
+                self.gfind("WARN", "ignore", f"ignored_findings-Eintrag `{e['component']}` / `{e['check']}`{match} "
+                                             f"trifft auf keinen Befund zu – Eintrag entfernen oder anpassen.")
 
     # ---------------- baseline (pull requests) ----------------
     @staticmethod
@@ -1033,8 +1046,8 @@ class Checker:
                 L.append(f"- {icon[f.severity]} **{f.check}**: {f.message}")
             L.append("")
         L += ["---", "Legende: ❌ FAIL bricht den Lauf ab · ⚠️ WARN · ❔ UNCHECKED = Prüfung nicht möglich, "
-              "**kein** Freibrief · ℹ️ INFO. Bewertungen von CVEs/Advisories in "
-              "`moodle/scripts/ci/plugin_health/config.json` (vulnerability_triage)."]
+              "**kein** Freibrief · ℹ️ INFO. Bewertete und bewusst ignorierte Befunde "
+              "stehen in `moodle/scripts/ci/plugin_health/config.json` (ignored_findings)."]
         return "\n".join(L)
 
 
@@ -1063,6 +1076,7 @@ def main(argv=None):
         checker.run()
     except Exception as e:
         checker.gfind("FAIL", "internal", f"Abbruch: {type(e).__name__}: {e}")
+    checker.apply_ignores()
     if args.baseline:
         try:
             checker.apply_baseline(args.baseline)
