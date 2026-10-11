@@ -58,8 +58,6 @@ global:
       enabled: false
     boost_union:
       enabled: false
-    boost_magnific:
-      enabled: false
     snap:
       enabled: false
     flexsections:

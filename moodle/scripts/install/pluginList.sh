@@ -14,7 +14,6 @@ plugin_dependency_list=(
 
 plugin_list=(
     # mod_booking   custom download logic from gh until it is available via marketplace/directory
-    # theme_boost_magnific   custom download logic below - the marketplace metadata of its only published version is broken
     # local_course_reminder   custom download logic below - the marketplace metadata of its only published version is broken
     # format_topcoll   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
     # theme_adaptable   custom download logic below - the maintainer withdrew the plugin from the Moodle plugins directory (2026-09)
