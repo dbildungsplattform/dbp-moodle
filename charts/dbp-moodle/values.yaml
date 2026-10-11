@@ -56,8 +56,6 @@ global:
       enabled: false
     adaptable:
       enabled: false
-    boost_union:
-      enabled: false
     snap:
       enabled: false
     flexsections:
