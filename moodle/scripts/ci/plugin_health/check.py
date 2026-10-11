@@ -593,7 +593,7 @@ class Checker:
             res.add("FAIL", "directory", "Im Live-Verzeichnis nicht mehr vorhanden - zurückgezogen?")
             return
         ver = select_directory_version(live_entry, release)
-        if ver and str(ver.get("version")) != res.version:
+        if ver and int(str(ver.get("version", "0")) or 0) > int(res.version or "0"):
             res.add("WARN", "outdated", f"Neuere Version im Verzeichnis: {ver.get('release')} "
                                         f"({ver.get('version')}), ausgeliefert wird {res.release} ({res.version}).")
 
