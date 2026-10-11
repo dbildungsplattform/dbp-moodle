@@ -11,6 +11,7 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 | Plugin fehlt in `plugins.json`, keine Version für die Moodle-Version | `pluginList.sh`, `plugins.json`, `Dockerfile` | FAIL |
 | MD5 des Downloads passt nicht zu `plugins.json` | Moodle-Verzeichnis | FAIL |
 | Artefakt enthält anderes Plugin als erwartet | `version.php` im ausgelieferten ZIP | FAIL |
+| Artefakt-Version weicht von Metadaten ab oder ist nicht auswertbar | `version.php` im ausgelieferten ZIP | FAIL |
 | Versionsnummer in der Zukunft | `version.php` | WARN |
 | Keine GPL-Kopfzeile | `version.php` | WARN |
 | Repo archiviert / kein Commit seit 2 Jahren | Git, GitHub-API | FAIL |
@@ -64,14 +65,17 @@ steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg.
   `false_positive` (auch: nicht betroffen) oder `fixed`. `note` ist Pflicht.
 * `fixed_version` (Pflicht bei `fixed`, sonst nicht erlaubt) ist die Versionsnummer aus `version.php`,
   ab der der Fix enthalten ist. Der Befund wird nur ignoriert, solange die ausgelieferte Version
-  mindestens so hoch ist; bei älterer oder unbekannter Version bleibt er bestehen.
+  mindestens so hoch ist; bei älterer oder unbekannter Version bleibt er bestehen. Maßgeblich ist
+  die aus dem geprüften Artefakt gelesene Version, nicht die Angabe im Verzeichnis. Kann das Artefakt
+  nicht geprüft werden, greift keine `fixed`-Ausnahme.
 
 Ignorierte Befunde werden INFO und bleiben mit ursprünglicher Stufe, Grund und `note` im Bericht.
 Ein Eintrag, der auf keinen Befund mehr zutrifft, wird als WARN gemeldet (für `vulnerability` nur,
 wenn der CVE-Abgleich gelaufen ist); ein ungültiger Eintrag ist FAIL.
 
 In PRs zählen nur **neue** Befunde: Der Basisstand des Ziel-Branches wird mitgeprüft, dort schon
-vorhandene Befunde erscheinen als INFO.
+vorhandene Befunde erscheinen als INFO. Beim Vergleich werden nur veränderliche Altersangaben
+für Wartung und `plugins.json` normalisiert; Sicherheits-IDs und Versionsnummern bleiben erhalten.
 
 ## Lokal ausführen
 

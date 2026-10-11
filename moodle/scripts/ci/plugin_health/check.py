@@ -637,6 +637,8 @@ class Checker:
         return DirTree(dest)
 
     def check_artifact(self, res):
+        expected_version = res.version
+        res.version = None
         tree = self.fetch_tree(res)
         roots = tree.plugin_roots()
         if not roots:
@@ -647,13 +649,19 @@ class Checker:
             res.component = component
         elif component != res.component:
             res.add("FAIL", "artifact", f"Artefakt enthält `{component}` statt `{res.component}`.")
-        m = re.search(r"\$plugin->version\s*=\s*([0-9.]+)", vphp)
+        m = re.search(r"\$plugin->version\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*;", vphp)
         if m:
-            res.version = res.version or m.group(1)
+            if component == res.component:
+                res.version = m.group(1)
+            if expected_version is not None and str(expected_version) != m.group(1):
+                res.add("FAIL", "artifact", f"Version im Artefakt ({m.group(1)}) passt nicht zu den "
+                                             f"Metadaten ({expected_version}).")
             vdate = version_to_date(m.group(1))
             if vdate and (vdate - TODAY).days > self.th.get("future_version_tolerance_days", 31):
                 res.add("WARN", "version", f"Versionsnummer {m.group(1)} liegt in der Zukunft. Spätere "
                                            f"reguläre Releases mit kleinerer Nummer lassen sich nicht installieren.")
+        else:
+            res.add("FAIL", "artifact", "Keine auswertbare $plugin->version in version.php gefunden.")
         rm = re.search(r"\$plugin->release\s*=\s*['\"]([^'\"]+)['\"]", vphp)
         if rm and not res.release:
             res.release = rm.group(1)
@@ -972,8 +980,13 @@ class Checker:
     # ---------------- baseline (pull requests) ----------------
     @staticmethod
     def finding_key(component, f):
-        return (component, f["check"] if isinstance(f, dict) else f.check,
-                re.sub(r"\d+", "#", f["message"] if isinstance(f, dict) else f.message))
+        check_name = f["check"] if isinstance(f, dict) else f.check
+        message = f["message"] if isinstance(f, dict) else f.message
+        if check_name == "maintenance":
+            message = re.sub(r"(?<=vor )\d+(?= Tagen\b)", "#", message)
+        elif check_name == "plugins.json":
+            message = re.sub(r"(?<=ist )\d+(?= Tage alt\b)", "#", message)
+        return (component, check_name, message)
 
     def apply_baseline(self, path):
         """Findings already present in the baseline report are downgraded to INFO."""

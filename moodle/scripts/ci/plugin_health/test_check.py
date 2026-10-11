@@ -7,6 +7,7 @@ import sys
 import types
 import unittest
 import zipfile
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import check  # noqa: E402
@@ -263,6 +264,59 @@ class Vulnerabilities(unittest.TestCase):
         self.assertEqual(self.run_ignore([self.FIXED], "2026020100")[1].severity, "INFO")
         self.assertEqual(self.run_ignore([self.FIXED], None)[1].severity, "FAIL")  # unknown version: no pass
 
+    def test_fixed_uses_artifact_version(self):
+        for kind in ("directory", "marketplace-pin"):
+            for version, severity in (("2025010100", "FAIL"), ("2026020100", "INFO")):
+                with self.subTest(kind=kind, version=version):
+                    c = make_checker({"ignored_findings": [self.FIXED]})
+                    res = check.PluginResult("mod_x", check.Source(kind, "mod_x"), version="2026020100")
+                    tree = check.ZipTree(zip_bytes({"x/version.php": GPL_HEADER +
+                        f"$plugin->component = 'mod_x';\n$plugin->version = {version};\n"}))
+                    with patch.object(c, "fetch_tree", return_value=tree):
+                        c.check_artifact(res)
+                    c.vulnerability(res, "CVE-1")
+                    c.results = [res]
+                    c.apply_ignores()
+                    self.assertEqual(res.version, version)
+                    self.assertEqual(res.findings[-1].severity, severity)
+                    mismatch = [finding for finding in res.findings if finding.check == "artifact"]
+                    if version == "2025010100":
+                        self.assertTrue(mismatch)
+                        self.assertEqual(mismatch[0].severity, "FAIL")
+                        self.assertIn("2025010100", mismatch[0].message)
+                        self.assertIn("2026020100", mismatch[0].message)
+                    else:
+                        self.assertFalse(mismatch)
+
+    def test_unreadable_artifact_version_cannot_use_fixed_ignore(self):
+        for declaration in ("", "$plugin->version = $unknown;", "$plugin->version = 2026020100 - 10000;"):
+            with self.subTest(declaration=declaration):
+                c = make_checker({"ignored_findings": [self.FIXED]})
+                res = check.PluginResult("mod_x", check.Source("directory", "mod_x"), version="2026020100")
+                tree = check.ZipTree(zip_bytes({"x/version.php": GPL_HEADER +
+                    "$plugin->component = 'mod_x';\n" + declaration}))
+                with patch.object(c, "fetch_tree", return_value=tree):
+                    c.check_artifact(res)
+                c.vulnerability(res, "CVE-1")
+                c.results = [res]
+                c.apply_ignores()
+                self.assertIsNone(res.version)
+                self.assertTrue(any(finding.check == "artifact" and finding.severity == "FAIL"
+                                    for finding in res.findings))
+                self.assertEqual(res.findings[-1].severity, "FAIL")
+
+    def test_download_failure_cannot_use_fixed_ignore(self):
+        c = make_checker({"ignored_findings": [self.FIXED]})
+        res = check.PluginResult("mod_x", check.Source("directory", "mod_x"), version="2026020100")
+        with patch.object(c, "fetch_tree", side_effect=OSError("network down")):
+            with self.assertRaises(OSError):
+                c.check_artifact(res)
+        c.vulnerability(res, "CVE-1")
+        c.results = [res]
+        c.apply_ignores()
+        self.assertIsNone(res.version)
+        self.assertEqual(res.findings[-1].severity, "FAIL")
+
     def test_fixed_requires_version_and_only_fixed_takes_one(self):
         for bad in ({**self.FIXED, "fixed_version": "v1.2"}, {k: v for k, v in self.FIXED.items() if k != "fixed_version"},
                     {**self.FIXED, "reason": "risk_accepted"}):
@@ -415,6 +469,28 @@ class BashCrosscheck(unittest.TestCase):
 
 
 class Baseline(unittest.TestCase):
+    def test_security_ids_and_versions_are_not_normalized(self):
+        for old_message, new_message in (
+                ("CVE-2025-1000: Moodle demo XSS", "CVE-2026-9000: Moodle demo XSS"),
+                ("GHSA-ab12-cd34-ef56: XSS", "GHSA-ab98-cd76-ef54: XSS"),
+                ("pdf.js 2.14.34 affected by GHSA-test", "pdf.js 3.0.0 affected by GHSA-test")):
+            with self.subTest(message=new_message):
+                c = make_checker({})
+                res = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
+                res.add("FAIL", "vulnerability", old_message)
+                res.add("FAIL", "vulnerability", new_message)
+                c.results = [res]
+                base = {"plugins": [{"component": "mod_x", "findings": [res.findings[0].as_dict()]}]}
+                with patch.object(check, "read_json", return_value=base):
+                    c.apply_baseline("baseline.json")
+                self.assertEqual(res.findings[0].severity, "INFO")
+                self.assertEqual(res.findings[1].severity, "FAIL")
+
+    def test_pluginlist_age_is_still_normalized(self):
+        old = check.Finding("WARN", "plugins.json", "plugins.json ist 40 Tage alt.")
+        new = check.Finding("WARN", "plugins.json", "plugins.json ist 41 Tage alt.")
+        self.assertEqual(check.Checker.finding_key("*", old.as_dict()), check.Checker.finding_key("*", new))
+
     def test_known_findings_become_info_new_ones_stay(self):
         import tempfile
         c = make_checker({})
