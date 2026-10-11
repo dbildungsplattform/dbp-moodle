@@ -5,7 +5,7 @@ Reads the plugin set the image build actually uses (pluginList.sh, plugins.json 
 download logic in downloadPlugins.sh), fetches every plugin the way the build does, and checks:
 
 * the shipped artifact: component name, version number, license header and bundled third-party
-  libraries (looked up in OSV)
+  libraries, declared in thirdpartylibs.xml or detected in the files (looked up in OSV)
 * the upstream repository: archived state, activity, releases, published security advisories
 * known CVEs (CVEProject/cvelistV5 checkout) that mention the plugin
 * consistency: pins that are behind newer releases, branch pins, stale plugins.json, components
@@ -44,6 +44,9 @@ IGNORE_REASONS = {"risk_accepted": "Risiko akzeptiert", "mitigated": "anderweiti
 # checks whose findings stay WARN in a pull request even if the base branch already has them
 BASELINE_KEEP_WARN = {"vulnerability", "maintenance"}
 HTTP_TIMEOUT = 60
+# "/*! jQuery UI 1.8.11" style banner at the top of a bundled script: (name, version)
+BANNER_RE = re.compile(r"/\*[!*]?[\s*]*(?:@(?:license|preserve)\s+)?([A-Za-z][\w.@/ -]{1,40}?)[\s,-]+v?(\d+\.\d+(?:\.\d+)?)\b")
+BANNER_HEAD = 2000
 USER_AGENT = "dbp-moodle-plugin-health-check"
 
 
@@ -691,6 +694,53 @@ class Checker:
                 libs.append({"name": g("name"), "version": g("version"), "license": g("license"),
                              "location": g("location")})
         res.metrics["libraries"] = libs
+        res.metrics["detected_libraries"] = self.detect_libraries(tree, root)
+
+    def detect_libraries(self, tree, root):
+        """Bundled libraries found in the artifact itself, whether or not thirdpartylibs.xml lists them.
+
+        Three sources: version banners at the top of scripts, the runtime dependencies of a nested
+        npm build (package.json next to its build/ or dist/ output) and Composer's installed.json.
+        A package.json at the plugin root is skipped: there the dependencies are mostly build tooling.
+        """
+        found, files = {}, [f for f in tree.files() if f.startswith(root) and "__MACOSX/" not in f]
+
+        def add(name, version, path, ecosystem=None, package=None):
+            found.setdefault((name, version, ecosystem), {"name": name, "version": version, "file": path[len(root):],
+                                                          "ecosystem": ecosystem, "package": package})
+
+        def load(path):
+            try:
+                return json.loads(tree.read(path) or "")
+            except ValueError:
+                return None
+
+        for f in files:
+            rel = f[len(root):]
+            if rel.endswith(".js") and not re.search(r"(^|/)(tests?|node_modules)/", rel):
+                for m in BANNER_RE.finditer((tree.read(f) or "")[:BANNER_HEAD]):
+                    name = re.sub(r"\s+", " ", re.sub(r"(?i)\s+JavaScript Library$", "", m.group(1).strip()))
+                    add(name, m.group(2), f)
+            elif rel.endswith("/package.json") and "node_modules/" not in rel:
+                base = f[:-len("package.json")]
+                if not any(x.startswith((base + "build/", base + "dist/")) for x in files):
+                    continue
+                deps = (load(f) or {}).get("dependencies")
+                lock = load(base + "package-lock.json") or {}
+                for pkg, wanted in (deps.items() if isinstance(deps, dict) else []):
+                    locked = (lock.get("packages", {}).get("node_modules/" + pkg) or
+                              lock.get("dependencies", {}).get(pkg) or {}).get("version")
+                    exact = wanted if re.fullmatch(r"\d+(\.\d+)+", str(wanted)) else None
+                    add(pkg, locked or exact, base + ("package-lock.json" if locked else "package.json"), "npm", pkg)
+            elif rel.endswith("vendor/composer/installed.json"):
+                data = load(f)
+                packages = data.get("packages", []) if isinstance(data, dict) else data or []
+                dev = set(data.get("dev-package-names", [])) if isinstance(data, dict) else set()
+                for pkg in packages:
+                    if isinstance(pkg, dict) and pkg.get("name") and pkg["name"] not in dev:
+                        m = re.match(r"v?(\d+(\.\d+)+)", str(pkg.get("version", "")))
+                        add(pkg["name"], m.group(1) if m else None, f, "Packagist", pkg["name"])
+        return sorted(found.values(), key=lambda d: (d["file"], d["name"], d["version"] or ""))
 
     # ---------------- repository ----------------
     def repo_data(self, url):
@@ -898,8 +948,14 @@ class Checker:
         mapping = [(re.compile(m["match"], re.I), m["ecosystem"], m["package"])
                    for m in self.cfg.get("library_map", [])]
         queries, owners = [], []
+
+        def same_version(a, b):  # 1.15 and 1.15.0 are the same release
+            a, b = ([int(x) for x in v.split(".") if x.isdigit()] for v in (a, b))
+            size = max(len(a), len(b))
+            return a + [0] * (size - len(a)) == b + [0] * (size - len(b))
+
         for res in self.results:
-            unmapped, seen = [], set()
+            unmapped, seen, declared = [], set(), {}
             for lib in res.metrics.get("libraries", []):
                 hit = next(((eco, pkg) for rx, eco, pkg in mapping
                             if rx.search(lib["name"]) or rx.search(lib["location"])), None)
@@ -908,6 +964,7 @@ class Checker:
                     unmapped.append(lib["name"] or lib["location"])
                     continue
                 ver = re.match(r"^\d+(\.\d+)*", ver).group(0)
+                declared.setdefault(hit, []).append(ver)
                 if (hit, ver) in seen:  # e.g. pdf.js, pdf.worker.js, pdf_viewer.js = one package
                     continue
                 seen.add((hit, ver))
@@ -916,6 +973,35 @@ class Checker:
             if unmapped:
                 res.add("UNCHECKED", "libraries", "Bibliotheken ohne OSV-Zuordnung: " + ", ".join(unmapped[:8]) +
                         (" …" if len(unmapped) > 8 else ""))
+            # Libraries found in the artifact itself. The same package and version as a declared
+            # library is one query; a different version means thirdpartylibs.xml is wrong.
+            undeclared, skew = [], []
+            # shortest name first: "jQuery UI" labels the finding, not "jQuery UI Effects Blind"
+            for lib in sorted(res.metrics.get("detected_libraries", []), key=lambda d: len(d["name"])):
+                hit = (lib["ecosystem"], lib["package"]) if lib["package"] else next(
+                    ((eco, pkg) for rx, eco, pkg in mapping if rx.search(lib["name"])), None)
+                ver = lib["version"]
+                if not hit or not ver:
+                    entry = f"{lib['name']} {ver or '(Version unbekannt)'} ({lib['file']})"
+                    if entry not in undeclared:
+                        undeclared.append(entry)
+                    continue
+                if hit in declared and not any(same_version(ver, d) for d in declared[hit]):
+                    entry = f"{hit[1]} {ver} in {lib['file']} (deklariert: {', '.join(sorted(set(declared[hit])))})"
+                    if not any(e.startswith(f"{hit[1]} {ver} in ") for e in skew):
+                        skew.append(entry)
+                if any(h == hit and same_version(ver, v) for h, v in seen):
+                    continue
+                seen.add((hit, ver))
+                queries.append({"package": {"ecosystem": hit[0], "name": hit[1]}, "version": ver})
+                owners.append((res, f"{lib['name']} {ver} ({hit[0]}:{hit[1]}, nicht in thirdpartylibs.xml "
+                                    f"deklariert, erkannt in {lib['file']})"))
+            if skew:
+                res.add("WARN", "libraries", "thirdpartylibs.xml nennt eine andere Version als das Artefakt enthält: " +
+                        "; ".join(skew[:8]) + (" …" if len(skew) > 8 else ""))
+            if undeclared:
+                res.add("UNCHECKED", "libraries", "Nicht deklarierte Bibliotheken ohne OSV-Zuordnung: " +
+                        ", ".join(undeclared[:8]) + (" …" if len(undeclared) > 8 else ""))
         if not queries:
             return
         if self.args.offline:

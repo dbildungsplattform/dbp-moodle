@@ -241,6 +241,86 @@ class ArtifactChecks(unittest.TestCase):
         self.assertTrue(lib and all(f.severity == "UNCHECKED" for f in lib))
 
 
+class DetectedLibraries(unittest.TestCase):
+    """Libraries the plugin bundles without (correctly) declaring them in thirdpartylibs.xml."""
+    CONFIG = {"thresholds": {}, "library_map": [
+        {"match": "^jquery ui\\b", "ecosystem": "npm", "package": "jquery-ui"},
+        {"match": "^jquery$", "ecosystem": "npm", "package": "jquery"}]}
+
+    def run_osv(self, files, vulnerable=()):
+        files = {"demo/version.php": GPL_HEADER + "$plugin->component = 'mod_demo';\n$plugin->version = 2024010100;\n",
+                 **files}
+        c = make_checker(self.CONFIG)
+        res = check.PluginResult("mod_demo", check.Source("directory", "mod_demo"))
+        c.fetch_tree = lambda r: check.ZipTree(zip_bytes(files))
+        c.check_artifact(res)
+        c.results.append(res)
+        asked = []
+
+        def fake_osv(url, headers=None, data=None, **k):
+            queries = json.loads(data)["queries"]
+            asked.extend((q["package"]["name"], q["version"]) for q in queries)
+            return json.dumps({"results": [{"vulns": [{"id": "GHSA-test"}]} if q["package"]["name"] in vulnerable
+                                           else {} for q in queries]}).encode()
+        with patch.object(check, "http_get", fake_osv):
+            c.check_osv()
+        return res, asked
+
+    def test_banner_finds_undeclared_library_once_per_version(self):
+        res, asked = self.run_osv({
+            "demo/lib/ui/jquery.ui.core.js": "/*!\n * jQuery UI 1.8.11\n */\n",
+            "demo/lib/ui/jquery.ui.accordion.js": "/*\n * jQuery UI Accordion 1.8.11\n */\n",
+            "demo/tests/fixtures/jquery.js": "/*! jQuery v1.0.0 */",          # not shipped code
+            "demo/amd/src/own.js": "// plain plugin code\n"}, vulnerable=("jquery-ui",))
+        self.assertEqual(asked, [("jquery-ui", "1.8.11")])
+        hit = [f for f in res.findings if f.check == "vulnerability"]
+        self.assertEqual(len(hit), 1)
+        self.assertIn("jQuery UI 1.8.11 (npm:jquery-ui, nicht in thirdpartylibs.xml deklariert", hit[0].message)
+
+    def test_declared_version_differing_from_the_file_is_warned_and_both_are_checked(self):
+        xml = ("<libraries><library><location>lib/jquery</location><name>jquery</name>"
+               "<version>1.4.3</version></library></libraries>")
+        res, asked = self.run_osv({"demo/thirdpartylibs.xml": xml,
+                                   "demo/lib/jquery/jquery-1.4.3.js": "/*!\n * jQuery JavaScript Library v1.5.2\n */"})
+        self.assertEqual(asked, [("jquery", "1.4.3"), ("jquery", "1.5.2")])
+        self.assertTrue(any(f.severity == "WARN" and "jquery 1.5.2 in lib/jquery/jquery-1.4.3.js (deklariert: 1.4.3)"
+                            in f.message for f in res.findings))
+
+    def test_matching_declaration_is_one_query_without_warning(self):
+        xml = ("<libraries><library><location>lib/jquery</location><name>jquery</name>"
+               "<version>3.5</version></library></libraries>")
+        res, asked = self.run_osv({"demo/thirdpartylibs.xml": xml, "demo/lib/jquery/jquery.js": "/*! jQuery v3.5.0 */"})
+        self.assertEqual(asked, [("jquery", "3.5")])
+        self.assertFalse(any(f.severity == "WARN" for f in res.findings))
+
+    def test_unknown_banner_is_unchecked_not_ok(self):
+        res, asked = self.run_osv({"demo/amd/src/rating.js": "/**\n * Mystery Rating Plugin v1.2.2\n */"})
+        self.assertEqual(asked, [])
+        self.assertTrue(any(f.severity == "UNCHECKED" and "Mystery Rating Plugin 1.2.2 (amd/src/rating.js)" in f.message
+                            for f in res.findings))
+
+    def test_nested_npm_build_uses_locked_runtime_dependencies(self):
+        res, asked = self.run_osv({
+            "demo/editor/package.json": json.dumps({"dependencies": {"left-pad": "^1.0.0", "unlocked": "^2.0.0"},
+                                                    "devDependencies": {"webpack": "5.0.0"}}),
+            "demo/editor/package-lock.json": json.dumps({"packages": {"node_modules/left-pad": {"version": "1.3.0"}}}),
+            "demo/editor/build/editor.js": "!function(){}()",
+            # build tooling of the plugin itself, nothing of it is shipped
+            "demo/package.json": json.dumps({"dependencies": {"gulp": "4.0.2"}}),
+            "demo/dist/x.js": ""}, vulnerable=("left-pad",))
+        self.assertEqual(asked, [("left-pad", "1.3.0")])
+        self.assertTrue(any(f.severity == "FAIL" and "editor/package-lock.json" in f.message for f in res.findings))
+        self.assertTrue(any(f.severity == "UNCHECKED" and "unlocked (Version unbekannt)" in f.message
+                            for f in res.findings))
+
+    def test_composer_installed_packages_without_dev(self):
+        installed = {"packages": [{"name": "phpoffice/phpword", "version": "v1.1.0"},
+                                  {"name": "phpunit/phpunit", "version": "9.0.0"}],
+                     "dev-package-names": ["phpunit/phpunit"]}
+        res, asked = self.run_osv({"demo/vendor/composer/installed.json": json.dumps(installed)})
+        self.assertEqual(asked, [("phpoffice/phpword", "1.1.0")])
+
+
 class Vulnerabilities(unittest.TestCase):
     def run_ignore(self, entries, version):
         c = make_checker({"ignored_findings": entries})

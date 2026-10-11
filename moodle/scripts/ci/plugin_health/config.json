@@ -68,6 +68,11 @@
       "package": "jspdf"
     },
     {
+      "match": "^jquery ui\\b|jquery-ui",
+      "ecosystem": "npm",
+      "package": "jquery-ui"
+    },
+    {
       "match": "sortable",
       "ecosystem": "npm",
       "package": "sortablejs"
@@ -91,11 +96,6 @@
       "match": "minicolors",
       "ecosystem": "npm",
       "package": "@claviska/jquery-minicolors"
-    },
-    {
-      "match": "^jquery ui$|jquery-ui",
-      "ecosystem": "npm",
-      "package": "jquery-ui"
     },
     {
       "match": "^jquery$",
@@ -143,6 +143,11 @@
       "package": "phpoffice/phpspreadsheet"
     },
     {
+      "match": "^phpoffice$|phpword",
+      "ecosystem": "Packagist",
+      "package": "phpoffice/phpword"
+    },
+    {
       "match": "firebase/php-jwt|php-jwt",
       "ecosystem": "Packagist",
       "package": "firebase/php-jwt"
@@ -151,6 +156,46 @@
       "match": "guzzle",
       "ecosystem": "Packagist",
       "package": "guzzlehttp/guzzle"
+    },
+    {
+      "match": "jsxgraph",
+      "ecosystem": "npm",
+      "package": "jsxgraph"
+    },
+    {
+      "match": "^ace( editor)?$",
+      "ecosystem": "npm",
+      "package": "ace-builds"
+    },
+    {
+      "match": "vimeo player",
+      "ecosystem": "npm",
+      "package": "@vimeo/player"
+    },
+    {
+      "match": "jquery ?easing",
+      "ecosystem": "npm",
+      "package": "jquery.easing"
+    },
+    {
+      "match": "flexslider",
+      "ecosystem": "npm",
+      "package": "flexslider"
+    },
+    {
+      "match": "^pace\\b",
+      "ecosystem": "npm",
+      "package": "pace-js"
+    },
+    {
+      "match": "markdown-?it",
+      "ecosystem": "npm",
+      "package": "markdown-it"
+    },
+    {
+      "match": "modernizr",
+      "ecosystem": "npm",
+      "package": "modernizr"
     }
   ]
 }

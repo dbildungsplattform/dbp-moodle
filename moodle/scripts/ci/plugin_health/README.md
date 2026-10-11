@@ -21,7 +21,8 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 | Gleiches Plugin aus zwei Quellen; Versions-Downgrade zwischen ihnen | alle Quellen | FAIL / WARN |
 | CVE nennt das Plugin | CVEProject/cvelistV5 | FAIL bis bewertet |
 | Veröffentlichtes GitHub-Security-Advisory | GitHub-API | FAIL bis bewertet |
-| Gebündelte Bibliothek mit bekannter Lücke | `thirdpartylibs.xml` + OSV | FAIL bis bewertet |
+| Gebündelte Bibliothek mit bekannter Lücke | `thirdpartylibs.xml`, Dateien im Artefakt + OSV | FAIL bis bewertet |
+| `thirdpartylibs.xml` nennt eine andere Version, als im Artefakt steckt | Dateikopf der Bibliothek | WARN |
 
 Alles, was nicht geprüft werden konnte (Netzwerk, Bitbucket, Bibliothek ohne OSV-Zuordnung …),
 steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg.
@@ -95,5 +96,13 @@ GITHUB_TOKEN=$(gh auth token) python moodle/scripts/ci/plugin_health/check.py \
   „keine Quelle erkannt“ – dann Parser erweitern.
 * Der CVE-Abgleich ist textbasiert (Komponentenname, Plugin-Name, Repo-Name, Aliase). Er findet
   Kandidaten, keine Gewissheit; deshalb die Pflicht zur Bewertung.
-* Die Versionen in `thirdpartylibs.xml` sind Herstellerangaben und können falsch sein.
+* Die Versionen in `thirdpartylibs.xml` sind Herstellerangaben und können falsch sein. Deshalb sucht
+  der Check zusätzlich im Artefakt selbst nach Bibliotheken, auch nach nicht deklarierten:
+  Versionskopf am Anfang von `.js`-Dateien (`/*! jQuery UI 1.8.11 …`), Laufzeit-Abhängigkeiten eines
+  eingebetteten npm-Builds (`package.json` mit `build/` oder `dist/` daneben, Versionen aus
+  `package-lock.json`) und Composers `vendor/composer/installed.json`. Ein `package.json` im
+  Plugin-Wurzelverzeichnis zählt nicht, dort stehen überwiegend Build-Werkzeuge.
+* Das ist eine Heuristik: Minifizierte oder umbenannte Bibliotheken ohne Versionskopf und PHP-Bibliotheken
+  ohne Composer-Metadaten bleiben unerkannt. Ein erkannter Name ohne Eintrag in `library_map` wird als
+  UNCHECKED gemeldet – dann dort das OSV-Paket ergänzen.
 * Bitbucket-Repos (`format_tiles`) erhalten keine GitHub-Metadaten.
