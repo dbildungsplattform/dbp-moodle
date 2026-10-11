@@ -82,7 +82,6 @@ etherpadlite:mod_etherpadlite:mod/etherpadlite:                 {{- .Values.glob
 hvp:mod_hvp:mod/hvp:                                            {{- .Values.global.moodlePlugins.hvp.enabled }}{{"\n"}}
 groupselect:mod_groupselect:mod/groupselect:                    {{- .Values.global.moodlePlugins.groupselect.enabled }}{{"\n"}}
 jitsi:mod_jitsi:mod/jitsi:                                      {{- .Values.global.moodlePlugins.jitsi.enabled }}{{"\n"}}
-pdfannotator:mod_pdfannotator:mod/pdfannotator:                 {{- .Values.global.moodlePlugins.pdfannotator.enabled }}{{"\n"}}
 skype:mod_skype:mod/skype:                                      {{- .Values.global.moodlePlugins.skype.enabled }}{{"\n"}}
 zoom:mod_zoom:mod/zoom:                                         {{- .Values.global.moodlePlugins.zoom.enabled }}{{"\n"}}
 booking:mod_booking:mod/booking:                                {{- .Values.global.moodlePlugins.booking.enabled }}{{"\n"}}
@@ -105,7 +104,6 @@ xp:block_xp:blocks/xp:                                          {{- .Values.glob
 coursecertificate:mod_coursecertificate:mod/coursecertificate:  {{- .Values.global.moodlePlugins.coursecertificate.enabled }}{{"\n"}}
 adaptable:theme_adaptable:theme/adaptable:                      {{- .Values.global.moodlePlugins.adaptable.enabled }}{{"\n"}}
 boost_union:theme_boost_union:theme/boost_union:                {{- .Values.global.moodlePlugins.boost_union.enabled }}{{"\n"}}
-boost_magnific:theme_boost_magnific:theme/boost_magnific:       {{- .Values.global.moodlePlugins.boost_magnific.enabled }}{{"\n"}}
 snap:theme_snap:theme/snap:                                     {{- .Values.global.moodlePlugins.snap.enabled }}{{"\n"}}
 usersuspension:tool_usersuspension:admin/tool/usersuspension:   {{- .Values.global.moodlePlugins.usersuspension.enabled }}{{"\n"}}
 dynamic_cohorts:tool_dynamic_cohorts:admin/tool/dynamic_cohorts:{{- .Values.global.moodlePlugins.dynamic_cohorts.enabled }}{{"\n"}}

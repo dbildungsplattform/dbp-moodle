@@ -45,9 +45,6 @@
     "block_xp": [
       "Level Up XP"
     ],
-    "mod_pdfannotator": [
-      "PDF Annotator"
-    ],
     "auth_oidc": [
       "o365-moodle",
       "moodle-auth_oidc"

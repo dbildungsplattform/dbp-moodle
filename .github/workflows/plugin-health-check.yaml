@@ -68,11 +68,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_STEP_SUMMARY: '' # Basisbericht nicht in die Job-Zusammenfassung schreiben
         run: |
           git worktree add "$RUNNER_TEMP/base" "${{ github.event.pull_request.base.sha }}"
           set +e
-          python "$CHECK_DIR/check.py" \
+          # Basisbericht nicht in die Job-Zusammenfassung schreiben. GITHUB_* lässt sich nicht über
+          # `env:` überschreiben, deshalb die Variable erst für den Prozess entfernen.
+          env -u GITHUB_STEP_SUMMARY python "$CHECK_DIR/check.py" \
             --repo-root "$RUNNER_TEMP/base" \
             --config "$CHECK_DIR/config.json" \
             --work-dir "$RUNNER_TEMP/plugin-health" \
