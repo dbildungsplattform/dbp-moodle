@@ -555,7 +555,9 @@ class Checker:
             try:
                 self.check_cves()
             except Exception as e:
-                self.gfind("UNCHECKED", "cve", f"CVE-Abgleich fehlgeschlagen: {e}")
+                message = f"CVE-Abgleich fehlgeschlagen: {e}"
+                self.unchecked["cve"] = message
+                self.gfind("UNCHECKED", "cve", message)
         else:
             self.unchecked["cve"] = "kein --cve-dir angegeben"
         self.check_osv()
