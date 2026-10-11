@@ -103,7 +103,6 @@ sharing_cart:block_sharing_cart:blocks/sharing_cart:            {{- .Values.glob
 xp:block_xp:blocks/xp:                                          {{- .Values.global.moodlePlugins.xp.enabled }}{{"\n"}}
 coursecertificate:mod_coursecertificate:mod/coursecertificate:  {{- .Values.global.moodlePlugins.coursecertificate.enabled }}{{"\n"}}
 adaptable:theme_adaptable:theme/adaptable:                      {{- .Values.global.moodlePlugins.adaptable.enabled }}{{"\n"}}
-boost_union:theme_boost_union:theme/boost_union:                {{- .Values.global.moodlePlugins.boost_union.enabled }}{{"\n"}}
 snap:theme_snap:theme/snap:                                     {{- .Values.global.moodlePlugins.snap.enabled }}{{"\n"}}
 usersuspension:tool_usersuspension:admin/tool/usersuspension:   {{- .Values.global.moodlePlugins.usersuspension.enabled }}{{"\n"}}
 dynamic_cohorts:tool_dynamic_cohorts:admin/tool/dynamic_cohorts:{{- .Values.global.moodlePlugins.dynamic_cohorts.enabled }}{{"\n"}}

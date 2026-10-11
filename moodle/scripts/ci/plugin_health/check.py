@@ -449,7 +449,7 @@ class Checker:
                 for n in names:
                     if seen.get(n) != arrays.get(n):
                         self.gfind("FAIL", "parser",
-                                   f"Statischer Parser und bash lesen `{n}` unterschiedlich – Parser anpassen. "
+                                   f"Statischer Parser und bash lesen `{n}` unterschiedlich - Parser anpassen. "
                                    f"Nur bash: {sorted(set(seen.get(n, [])) - set(arrays.get(n, [])))}, "
                                    f"nur Parser: {sorted(set(arrays.get(n, [])) - set(seen.get(n, [])))}")
 
@@ -481,7 +481,7 @@ class Checker:
             self.results.append(res)
             entry = directory.get(comp)
             if not entry:
-                res.add("FAIL", "directory", "Kein Eintrag in plugins.json – updatePluginList.sh ausführen.")
+                res.add("FAIL", "directory", "Kein Eintrag in plugins.json - updatePluginList.sh ausführen.")
                 continue
             if release is None:
                 res.add("FAIL", "directory", "Legacy-Plugin ohne erkennbares `moosh plugin-download -v`.")
@@ -497,7 +497,7 @@ class Checker:
                 supported = ", ".join(str(s.get("release")) for s in newest.get("supportedmoodles", []))
                 res.add("INFO", "version-selection",
                         f"Neuere Version {newest.get('release')} ({newest.get('version')}) existiert, ist aber nur "
-                        f"für Moodle {supported} freigegeben – ausgeliefert wird die neueste für {release}.")
+                        f"für Moodle {supported} freigegeben - ausgeliefert wird die neueste für {release}.")
             res.repo_url = normalize_repo_url(entry.get("source") or ver.get("vcsrepositoryurl"))
             res.metrics["directory_name"] = entry.get("name")
             res.metrics["directory_last_release"] = entry.get("timelastreleased")
@@ -568,7 +568,7 @@ class Checker:
             return
         age = (TODAY - dt.datetime.fromtimestamp(int(ts), dt.timezone.utc)).days
         if age > self.th.get("pluginsjson_max_age_days", 30):
-            self.gfind("WARN", "plugins.json", f"plugins.json ist {age} Tage alt – updatePluginList.sh ausführen.")
+            self.gfind("WARN", "plugins.json", f"plugins.json ist {age} Tage alt - updatePluginList.sh ausführen.")
         else:
             self.gfind("INFO", "plugins.json", f"plugins.json ist {age} Tage alt.")
 
@@ -587,7 +587,7 @@ class Checker:
 
     def compare_live(self, res, live_entry, release):
         if not live_entry:
-            res.add("FAIL", "directory", "Im Live-Verzeichnis nicht mehr vorhanden – zurückgezogen?")
+            res.add("FAIL", "directory", "Im Live-Verzeichnis nicht mehr vorhanden - zurückgezogen?")
             return
         ver = select_directory_version(live_entry, release)
         if ver and str(ver.get("version")) != res.version:
@@ -810,7 +810,7 @@ class Checker:
         if d["last_commit"]:
             age = (TODAY - d["last_commit"]).days
             if age > self.th.get("stale_fail_days", 730):
-                res.add("FAIL", "maintenance", f"Letzter Commit vor {age} Tagen – vermutlich unmaintained.")
+                res.add("FAIL", "maintenance", f"Letzter Commit vor {age} Tagen - vermutlich unmaintained.")
             elif age > self.th.get("stale_warn_days", 365):
                 res.add("WARN", "maintenance", f"Letzter Commit vor {age} Tagen.")
         # releases: tags or directory release, whichever is newer
@@ -827,7 +827,7 @@ class Checker:
         # pinned refs
         src = res.source
         if src.kind == "git-branch":
-            res.add("WARN", "pin", f"Pin auf Branch `{src.ref or 'Default'}` statt Tag – Build nicht "
+            res.add("WARN", "pin", f"Pin auf Branch `{src.ref or 'Default'}` statt Tag - Build nicht "
                                    f"reproduzierbar, Änderungen kommen ungeprüft ins Image.")
         if src.kind in ("git-tag", "github-archive") and src.ref:
             fam = tag_family(src.ref)
@@ -851,7 +851,7 @@ class Checker:
             for a in gh.get("advisories", []):
                 ids = a["id"] + (f" / {a['cve']}" if a.get("cve") else "")
                 self.vulnerability(res, f"GitHub-Advisory {ids} ({a.get('severity')}): "
-                                        f"{a.get('summary')} – {a.get('url')}")
+                                        f"{a.get('summary')} - {a.get('url')}")
 
     # ---------------- cross-source checks ----------------
     def check_custom_coverage(self, commented):
@@ -907,7 +907,7 @@ class Checker:
         r = subprocess.run(["grep", "-rlis", "moodle", base], capture_output=True, text=True, timeout=1800)
         files = [f for f in r.stdout.splitlines() if f.endswith(".json")]
         if not files:
-            raise RuntimeError("keine Moodle-bezogenen CVE-Datensätze gefunden – Checkout unvollständig?")
+            raise RuntimeError("keine Moodle-bezogenen CVE-Datensätze gefunden - Checkout unvollständig?")
         records = []
         for f in files:
             try:
@@ -937,11 +937,11 @@ class Checker:
                 if any(t in rec["norm"] for t in terms):
                     score = f"CVSS {rec['score']}" if rec["score"] else "ohne CVSS"
                     self.vulnerability(res, f"{rec['id']} ({rec['published']}, {score}): {rec['title'][:160]}"
-                                                f" – https://www.cve.org/CVERecord?id={rec['id']}")
+                                                f" - https://www.cve.org/CVERecord?id={rec['id']}")
 
     def vulnerability(self, res, text):
         res.add(self.cfg.get("unreviewed_vulnerability_severity", "FAIL"), "vulnerability",
-                f"{text} – **unbewertet**: prüfen und in config.json unter ignored_findings eintragen.")
+                f"{text} - **unbewertet**: prüfen und in config.json unter ignored_findings eintragen.")
 
     # ---------------- bundled libraries via OSV ----------------
     def check_osv(self):
@@ -1025,7 +1025,7 @@ class Checker:
                 continue
             ids = [v["id"] for v in vulns]
             for vid in ids:
-                self.vulnerability(res, f"{label} ist laut OSV betroffen von {vid} – https://osv.dev/vulnerability/{vid}")
+                self.vulnerability(res, f"{label} ist laut OSV betroffen von {vid} - https://osv.dev/vulnerability/{vid}")
 
     # ---------------- ignore list ----------------
     def apply_ignores(self):
@@ -1064,7 +1064,7 @@ class Checker:
                             f.message += (f" Laut ignored_findings behoben erst ab {e['fixed_version']}, "
                                           f"ausgeliefert {version or '?'}. {e['note']}")
                             break
-                    f.message = f"(ignoriert, war {f.severity} – {reason}: {e['note']}) {f.message}"
+                    f.message = f"(ignoriert, war {f.severity} - {reason}: {e['note']}) {f.message}"
                     f.severity = "INFO"
                     break
         vulns_checked = not self.args.offline and "cve" not in self.unchecked
@@ -1072,7 +1072,7 @@ class Checker:
             if not hits and (e["check"] != "vulnerability" or vulns_checked):
                 match = f", match „{e['match']}“" if e.get("match") else ""
                 self.gfind("WARN", "ignore", f"ignored_findings-Eintrag `{e['component']}` / `{e['check']}`{match} "
-                                             f"trifft auf keinen Befund zu – Eintrag entfernen oder anpassen.")
+                                             f"trifft auf keinen Befund zu - Eintrag entfernen oder anpassen.")
 
     # ---------------- baseline (pull requests) ----------------
     @staticmethod
@@ -1093,15 +1093,23 @@ class Checker:
 
         They are downgraded to INFO, except vulnerability and maintenance findings: those stay
         visible as WARN, because they need attention no matter which change introduced them.
+        Internal failures are never downgraded and invalidate a baseline report.
         """
         base = read_json(path)
+        base_findings = base.get("global_findings", []) + [
+            f for plugin in base.get("plugins", []) for f in plugin["findings"]]
+        if any(f["check"] == "internal" for f in base_findings):
+            self.gfind("WARN", "baseline", "Basisbericht enthält interne Fehler und wird nicht verwendet "
+                                          "- alle Befunde zählen voll.")
+            return
         known = {self.finding_key(p["component"], f) for p in base.get("plugins", []) for f in p["findings"]}
         known |= {self.finding_key("*", f) for f in base.get("global_findings", [])}
         targets = [(r.component, f) for r in self.results for f in r.findings]
         targets += [("*", f) for f in self.global_findings]
         counts = {"INFO": 0, "WARN": 0}
         for component, f in targets:
-            if SEV_RANK[f.severity] >= SEV_RANK["WARN"] and self.finding_key(component, f) in known:
+            if f.check != "internal" and SEV_RANK[f.severity] >= SEV_RANK["WARN"] \
+                    and self.finding_key(component, f) in known:
                 f.severity = "WARN" if f.check in BASELINE_KEEP_WARN else "INFO"
                 f.message = "(bereits im Basisstand) " + f.message
                 counts[f.severity] += 1
@@ -1148,10 +1156,10 @@ class Checker:
         for r in sorted(self.results, key=lambda r: (-SEV_RANK[r.worst], r.component)):
             m = r.metrics
             src = r.source.kind + (f" `{r.source.ref}`" if r.source.ref and r.source.kind != "directory" else "")
-            repo = f"[{r.repo_url.split('/', 3)[-1]}]({r.repo_url})" if r.repo_url else "–"
-            L.append(f"| {icon[r.worst]} | `{r.component}` | {src} | {r.release or '–'} ({r.version or '?'}) | {repo} | "
-                     f"{m.get('last_commit', '–')} | {m.get('commits_12m', '–')} | {m.get('release_tags_12m', '–')} | "
-                     f"{m.get('license') or '–'} |")
+            repo = f"[{r.repo_url.split('/', 3)[-1]}]({r.repo_url})" if r.repo_url else "-"
+            L.append(f"| {icon[r.worst]} | `{r.component}` | {src} | {r.release or '-'} ({r.version or '?'}) | {repo} | "
+                     f"{m.get('last_commit', '-')} | {m.get('commits_12m', '-')} | {m.get('release_tags_12m', '-')} | "
+                     f"{m.get('license') or '-'} |")
         L.append("")
         L += ["## Befunde je Plugin", ""]
         for r in sorted(self.results, key=lambda r: (-SEV_RANK[r.worst], r.component)):
@@ -1199,7 +1207,7 @@ def main(argv=None):
         try:
             checker.apply_baseline(args.baseline)
         except Exception as e:
-            checker.gfind("WARN", "baseline", f"Basisbericht nicht lesbar ({e}) – alle Befunde zählen voll.")
+            checker.gfind("WARN", "baseline", f"Basisbericht nicht lesbar ({e}) - alle Befunde zählen voll.")
     md = checker.report_md()
     if args.report_md:
         with open(args.report_md, "w", encoding="utf-8") as fh:

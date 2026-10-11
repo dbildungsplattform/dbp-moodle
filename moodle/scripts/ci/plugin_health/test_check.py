@@ -555,6 +555,35 @@ class BashCrosscheck(unittest.TestCase):
 
 
 class Baseline(unittest.TestCase):
+    def test_internal_failure_invalidates_baseline(self):
+        for severity in ("FAIL", "INFO"):
+            with self.subTest(severity=severity):
+                c = make_checker({})
+                self.addCleanup(shutil.rmtree, c.work)
+                c.gfind("FAIL", "internal", "deterministic failure")
+                res = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
+                res.add("FAIL", "vulnerability", "CVE-2099-1")
+                c.results = [res]
+                base = {"global_findings": [{"severity": severity, "check": "internal",
+                                             "message": "deterministic failure"}],
+                        "plugins": [{"component": "mod_x", "findings": [res.findings[0].as_dict()]}]}
+                with patch.object(check, "read_json", return_value=base):
+                    c.apply_baseline("baseline.json")
+                self.assertEqual(c.global_findings[0].severity, "FAIL")
+                self.assertEqual(res.findings[0].severity, "FAIL")
+                self.assertTrue(any(f.check == "baseline" and f.severity == "WARN" for f in c.global_findings))
+
+    def test_main_fails_when_both_runs_have_the_same_internal_error(self):
+        c = make_checker({})
+        self.addCleanup(shutil.rmtree, c.work)
+        base = {"global_findings": [{"severity": "FAIL", "check": "internal",
+                                     "message": "Abbruch: RuntimeError: deterministic failure"}]}
+        with patch.object(check, "read_json", side_effect=[{}, base]), \
+                patch.object(check.Checker, "run", side_effect=RuntimeError("deterministic failure")), \
+                patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": ""}), patch("sys.stdout", new_callable=io.StringIO):
+            result = check.main(["--work-dir", c.work, "--baseline", "baseline.json"])
+        self.assertEqual(result, 1)
+
     def test_security_ids_and_versions_are_not_normalized(self):
         # Each pair differs only in digits: the former blanket substitution made their keys
         # identical. Only the first finding exists in the baseline and may be downgraded.
@@ -584,18 +613,18 @@ class Baseline(unittest.TestCase):
         import tempfile
         c = make_checker({})
         r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
-        r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen – vermutlich unmaintained.")
-        r.add("FAIL", "vulnerability", "CVE-2099-1 – unbewertet")
-        r.add("FAIL", "vulnerability", "CVE-2099-2 – unbewertet")
+        r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen - vermutlich unmaintained.")
+        r.add("FAIL", "vulnerability", "CVE-2099-1 - unbewertet")
+        r.add("FAIL", "vulnerability", "CVE-2099-2 - unbewertet")
         r.add("FAIL", "pin", "Tag `v1` existiert im Repository nicht (mehr).")
         c.results = [r]
-        c.gfind("WARN", "plugins.json", "plugins.json ist 41 Tage alt – updatePluginList.sh ausführen.")
+        c.gfind("WARN", "plugins.json", "plugins.json ist 41 Tage alt - updatePluginList.sh ausführen.")
         base = {"plugins": [{"component": "mod_x", "findings": [
-            {"severity": "FAIL", "check": "maintenance", "message": "Letzter Commit vor 793 Tagen – vermutlich unmaintained."},
-            {"severity": "FAIL", "check": "vulnerability", "message": "CVE-2099-2 – unbewertet"},
+            {"severity": "FAIL", "check": "maintenance", "message": "Letzter Commit vor 793 Tagen - vermutlich unmaintained."},
+            {"severity": "FAIL", "check": "vulnerability", "message": "CVE-2099-2 - unbewertet"},
             {"severity": "FAIL", "check": "pin", "message": "Tag `v1` existiert im Repository nicht (mehr)."}]}],
             "global_findings": [{"severity": "WARN", "check": "plugins.json",
-                                 "message": "plugins.json ist 40 Tage alt – updatePluginList.sh ausführen."}]}
+                                 "message": "plugins.json ist 40 Tage alt - updatePluginList.sh ausführen."}]}
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
             json.dump(base, fh)
         try:
@@ -613,7 +642,7 @@ class IgnoreList(unittest.TestCase):
     def setup(self, entries):
         c = make_checker({"ignored_findings": entries})
         r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
-        r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen – vermutlich unmaintained.")
+        r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen - vermutlich unmaintained.")
         r.add("WARN", "pin", "Pin auf Branch `main` statt Tag.")
         other = check.PluginResult("mod_y", check.Source("directory", "mod_y"))
         other.add("WARN", "pin", "Pin auf Branch `main` statt Tag.")
@@ -626,7 +655,7 @@ class IgnoreList(unittest.TestCase):
         c, r, other = self.setup([{"component": "mod_x", "check": "maintenance", "reason": "risk_accepted",
                                    "note": "stabil, kein Ersatz"}])
         self.assertEqual(r.findings[0].severity, "INFO")
-        self.assertIn("war FAIL – Risiko akzeptiert: stabil, kein Ersatz", r.findings[0].message)
+        self.assertIn("war FAIL - Risiko akzeptiert: stabil, kein Ersatz", r.findings[0].message)
         self.assertEqual(r.findings[1].severity, "WARN")              # other check untouched
         self.assertEqual(other.findings[0].severity, "WARN")          # other component untouched
         self.assertFalse(any(f.check == "ignore" for f in c.global_findings))
