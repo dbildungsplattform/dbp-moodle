@@ -477,7 +477,7 @@ class BashCrosscheck(unittest.TestCase):
 class Baseline(unittest.TestCase):
     def test_security_ids_and_versions_are_not_normalized(self):
         # Each pair differs only in digits: the former blanket substitution made their keys
-        # identical. Only the first finding exists in the baseline and may become INFO.
+        # identical. Only the first finding exists in the baseline and may be downgraded.
         for old_message, new_message in (
                 ("CVE-2025-1000: Moodle demo XSS", "CVE-2026-9000: Moodle demo XSS"),
                 ("GHSA-ab12-cd34-ef56: XSS", "GHSA-ab98-cd76-ef54: XSS"),
@@ -491,7 +491,7 @@ class Baseline(unittest.TestCase):
                 base = {"plugins": [{"component": "mod_x", "findings": [res.findings[0].as_dict()]}]}
                 with patch.object(check, "read_json", return_value=base):
                     c.apply_baseline("baseline.json")
-                self.assertEqual(res.findings[0].severity, "INFO")
+                self.assertEqual(res.findings[0].severity, "WARN")
                 self.assertEqual(res.findings[1].severity, "FAIL")
 
     def test_pluginlist_age_is_still_normalized(self):
@@ -500,25 +500,33 @@ class Baseline(unittest.TestCase):
         # Exercise the saved-report dictionary and live Finding forms of the same global key.
         self.assertEqual(check.Checker.finding_key("*", old.as_dict()), check.Checker.finding_key("*", new))
 
-    def test_known_findings_become_info_new_ones_stay(self):
+    def test_known_findings_are_downgraded_new_ones_stay(self):
         import tempfile
         c = make_checker({})
         r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
         r.add("FAIL", "maintenance", "Letzter Commit vor 800 Tagen – vermutlich unmaintained.")
         r.add("FAIL", "vulnerability", "CVE-2099-1 – unbewertet")
+        r.add("FAIL", "vulnerability", "CVE-2099-2 – unbewertet")
+        r.add("FAIL", "pin", "Tag `v1` existiert im Repository nicht (mehr).")
         c.results = [r]
+        c.gfind("WARN", "plugins.json", "plugins.json ist 41 Tage alt – updatePluginList.sh ausführen.")
         base = {"plugins": [{"component": "mod_x", "findings": [
-            {"severity": "FAIL", "check": "maintenance", "message": "Letzter Commit vor 793 Tagen – vermutlich unmaintained."}]}],
-            "global_findings": []}
+            {"severity": "FAIL", "check": "maintenance", "message": "Letzter Commit vor 793 Tagen – vermutlich unmaintained."},
+            {"severity": "FAIL", "check": "vulnerability", "message": "CVE-2099-2 – unbewertet"},
+            {"severity": "FAIL", "check": "pin", "message": "Tag `v1` existiert im Repository nicht (mehr)."}]}],
+            "global_findings": [{"severity": "WARN", "check": "plugins.json",
+                                 "message": "plugins.json ist 40 Tage alt – updatePluginList.sh ausführen."}]}
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
             json.dump(base, fh)
         try:
             c.apply_baseline(fh.name)
         finally:
             os.unlink(fh.name)
-        sev = {f.check: f.severity for f in r.findings}
-        self.assertEqual(sev["maintenance"], "INFO")
-        self.assertEqual(sev["vulnerability"], "FAIL")
+        # known vulnerability and maintenance findings stay visible as WARN, everything else known is INFO
+        self.assertEqual([f.severity for f in r.findings], ["WARN", "FAIL", "WARN", "INFO"])
+        self.assertEqual(c.global_findings[0].severity, "INFO")
+        self.assertEqual(c.overall(), "FAIL")
+        self.assertIn("4 Befunde bestanden schon im Basisstand: 2 zu", c.global_findings[-1].message)
 
 
 class IgnoreList(unittest.TestCase):

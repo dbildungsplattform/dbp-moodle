@@ -74,7 +74,9 @@ Ein Eintrag, der auf keinen Befund mehr zutrifft, wird als WARN gemeldet (für `
 wenn der CVE-Abgleich gelaufen ist); ein ungültiger Eintrag ist FAIL.
 
 In PRs zählen nur **neue** Befunde: Der Basisstand des Ziel-Branches wird mitgeprüft, dort schon
-vorhandene Befunde erscheinen als INFO. Beim Vergleich werden nur veränderliche Altersangaben
+vorhandene Befunde erscheinen als INFO. Ausnahme: Schwachstellen (`vulnerability`) und fehlende Wartung
+(`maintenance`) bleiben auch dann als WARN sichtbar – sie brechen den PR nicht ab, sollen aber nicht
+untergehen. Beim Vergleich werden nur veränderliche Altersangaben
 für Wartung und `plugins.json` normalisiert; Sicherheits-IDs und Versionsnummern bleiben erhalten.
 
 ## Lokal ausführen

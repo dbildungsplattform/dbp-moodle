@@ -41,6 +41,8 @@ SEV_RANK = {s: i for i, s in enumerate(SEVERITIES)}
 TODAY = dt.datetime.now(dt.timezone.utc)
 IGNORE_REASONS = {"risk_accepted": "Risiko akzeptiert", "mitigated": "anderweitig mitigiert",
                   "false_positive": "False Positive", "fixed": "behoben"}
+# checks whose findings stay WARN in a pull request even if the base branch already has them
+BASELINE_KEEP_WARN = {"vulnerability", "maintenance"}
 HTTP_TIMEOUT = 60
 USER_AGENT = "dbp-moodle-plugin-health-check"
 
@@ -1001,21 +1003,25 @@ class Checker:
         return (component, check_name, message)
 
     def apply_baseline(self, path):
-        """Findings already present in the baseline report are downgraded to INFO."""
+        """Findings already present in the baseline report no longer fail the run.
+
+        They are downgraded to INFO, except vulnerability and maintenance findings: those stay
+        visible as WARN, because they need attention no matter which change introduced them.
+        """
         base = read_json(path)
         known = {self.finding_key(p["component"], f) for p in base.get("plugins", []) for f in p["findings"]}
         known |= {self.finding_key("*", f) for f in base.get("global_findings", [])}
-        downgraded = 0
-        for r in self.results:
-            for f in r.findings:
-                if SEV_RANK[f.severity] >= SEV_RANK["WARN"] and self.finding_key(r.component, f) in known:
-                    f.severity, f.message = "INFO", "(bereits im Basisstand) " + f.message
-                    downgraded += 1
-        for f in self.global_findings:
-            if SEV_RANK[f.severity] >= SEV_RANK["WARN"] and self.finding_key("*", f) in known:
-                f.severity, f.message = "INFO", "(bereits im Basisstand) " + f.message
-                downgraded += 1
-        self.gfind("INFO", "baseline", f"{downgraded} Befunde bestanden schon im Basisstand und sind hier nur INFO.")
+        targets = [(r.component, f) for r in self.results for f in r.findings]
+        targets += [("*", f) for f in self.global_findings]
+        counts = {"INFO": 0, "WARN": 0}
+        for component, f in targets:
+            if SEV_RANK[f.severity] >= SEV_RANK["WARN"] and self.finding_key(component, f) in known:
+                f.severity = "WARN" if f.check in BASELINE_KEEP_WARN else "INFO"
+                f.message = "(bereits im Basisstand) " + f.message
+                counts[f.severity] += 1
+        self.gfind("INFO", "baseline", f"{counts['INFO'] + counts['WARN']} Befunde bestanden schon im Basisstand: "
+                                       f"{counts['WARN']} zu Schwachstellen und Wartung bleiben WARN, "
+                                       f"{counts['INFO']} sind hier nur INFO.")
 
     # ---------------- reporting ----------------
     def overall(self):
@@ -1092,7 +1098,8 @@ def main(argv=None):
     ap.add_argument("--report-md")
     ap.add_argument("--report-json")
     ap.add_argument("--fail-level", default=None, choices=SEVERITIES)
-    ap.add_argument("--baseline", help="JSON-Bericht des Basisstands; dort schon vorhandene Befunde werden INFO")
+    ap.add_argument("--baseline", help="JSON-Bericht des Basisstands; dort schon vorhandene Befunde werden INFO "
+                                     "(Schwachstellen und Wartung: WARN)")
     args = ap.parse_args(argv)
 
     config = read_json(args.config)
