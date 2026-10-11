@@ -1,4 +1,15 @@
 # Changelog
+## [1.10.0] - 2026-10-09
+### Changes
+- **DBP-2563** Serve a deny-all `robots.txt` for Etherpad
+  - Mounted to `/opt/etherpad-lite/src/static/robots.txt` in the Etherpad container
+  - The content can be set in the values under `etherpadlite.robotsTxt` (defaults to `User-agent: *` / `Disallow: /`)
+- **DBP-2572** Replace customfield_dynamic with customfield_dynamicformat
+  - deprecates customfield_dynamic
+  - Introduces customfield_dynamicformat as a replacement, available via `global.moodlePlugins.customfield_dynamicformat.enabled`
+
+-  Use Image 4.5.14-fpm-trixie-8.2.33-dbp4 as default
+
 ## [1.9.0] - 2026-10-06
 ### Changes
 - **DBP-2467** Set required stack-plugin config via code

@@ -124,6 +124,7 @@ subcourse:mod_subcourse:mod/subcourse:                          {{- .Values.glob
 videotime:mod_videotime:mod/videotime:                          {{- .Values.global.moodlePlugins.mod_videotime.enabled }}{{"\n"}}
 mediatime:tool_mediatime:admin/tool/mediatime:                  {{- .Values.global.moodlePlugins.tool_mediatime.enabled }}{{"\n"}}
 course_reminder:local_course_reminder:local/course_reminder:    {{- .Values.global.moodlePlugins.local_course_reminder.enabled }}{{"\n"}}
+dynamicformat:customfield_dynamicformat:/customfield/field/dynamicformat:{{- .Values.global.moodlePlugins.customfield_dynamicformat.enabled }}{{"\n"}}
 {{- end -}}
 
 {{- define "dbpMoodle.pluginConfigMap.sys.uninstall.content" -}}

@@ -131,11 +131,16 @@ download_adaptable() {
     download_github_release theme_adaptable gjbarnard/moodle-theme_adaptable V405.2.9
 }
 
+download_dynamicformat() {
+    download_github_release customfield_dynamicformat Wunderbyte-GmbH/moodle-customfield_dynamicformat ines/v1.0.0
+}
+
 download_oidc
 download_booking
 download_course_reminder
 download_topcoll
 download_adaptable
+download_dynamicformat
 install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
@@ -148,5 +153,6 @@ for plugin in "${moodle_plugin_list[@]}"; do
     plugin_index=$((plugin_index + 1))
 done
 
+# deprecated in release 1.9.1, remove with release >= 1.10
 moosh plugin-download -v 3.7 customfield_dynamic
 check_plugin_zip "customfield_dynamic"

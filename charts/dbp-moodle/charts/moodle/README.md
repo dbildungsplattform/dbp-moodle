@@ -66,7 +66,7 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | image.pullSecrets | list | `[]` |  |
 | image.registry | string | `"ghcr.io"` |  |
 | image.repository | string | `"dbildungsplattform/moodle"` |  |
-| image.tag | string | `"4.5.14-fpm-trixie-8.2.33-dbp3"` |  |
+| image.tag | string | `"4.5.14-fpm-trixie-8.2.33-dbp4"` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.apiVersion | string | `""` |  |
 | ingress.enabled | bool | `false` |  |

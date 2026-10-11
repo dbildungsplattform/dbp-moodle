@@ -70,6 +70,8 @@ global:
       enabled: false
     filtercodes:
       enabled: false
+    customfield_dynamicformat:
+      enabled: false
     customfield_dynamic:
       enabled: false
     availability_cohort:
@@ -359,7 +361,7 @@ moodle:
     registry: "ghcr.io"
     repository: "dbildungsplattform/moodle"
     # -- The dbp-moodle image which is build for this helm chart
-    tag: "4.5.14-fpm-trixie-8.2.33-dbp3"
+    tag: "4.5.14-fpm-trixie-8.2.33-dbp4"
     pullPolicy: Always
     # -- Debug mode for more detailed moodle installation and log output
     debug: false
@@ -639,6 +641,11 @@ etherpadlite:
     - name: "etherpad-settings"
       mountPath: "/opt/etherpad-lite/settings.json"
       subPath: settings
+  # -- Content of the robots.txt served by Etherpad at /robots.txt.
+  # -- Mounted to /opt/etherpad-lite/src/static/robots.txt; defaults to deny all.
+  robotsTxt: |-
+    User-agent: *
+    Disallow: /
   ingress:
     enabled: true
     annotations:

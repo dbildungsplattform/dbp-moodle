@@ -68,7 +68,7 @@ extraDeploy: []
 image:
   registry: ghcr.io
   repository: dbildungsplattform/moodle
-  tag: 4.5.14-fpm-trixie-8.2.33-dbp3
+  tag: 4.5.14-fpm-trixie-8.2.33-dbp4
   digest: ""
   ## Specify a imagePullPolicy
   ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
