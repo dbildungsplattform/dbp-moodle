@@ -64,7 +64,8 @@ bleiben bei Artefakt-Downloads UNCHECKED.
 * `component` und `check` stehen so im Bericht (`### mod_beispiel`, **maintenance**). Für Befunde aus
   „Übergreifend“ ist `component` `*`.
 * `match` (optional) ist ein Textausschnitt der Meldung und grenzt ein, wenn ein Plugin mehrere Befunde
-  desselben Checks hat. Keine Zahlen verwenden, die sich ändern („vor 800 Tagen“).
+  desselben Checks hat. Auch eine Liste von Textausschnitten ist erlaubt; ein Treffer genügt (ein Eintrag
+  für mehrere CVEs mit derselben Begründung). Keine Zahlen verwenden, die sich ändern („vor 800 Tagen“).
 * `reason`: `risk_accepted` (Risiko akzeptiert), `mitigated` (anderweitig mitigiert),
   `false_positive` (auch: nicht betroffen) oder `fixed`. `note` ist Pflicht.
 * `fixed_version` (Pflicht bei `fixed`, sonst nicht erlaubt) ist die Versionsnummer aus `version.php`,

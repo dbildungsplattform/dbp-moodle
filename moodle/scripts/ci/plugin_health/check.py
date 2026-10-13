@@ -44,6 +44,8 @@ IGNORE_REASONS = {"risk_accepted": "Risiko akzeptiert", "mitigated": "anderweiti
 # checks whose findings stay WARN in a pull request even if the base branch already has them
 BASELINE_KEEP_WARN = {"vulnerability", "maintenance"}
 HTTP_TIMEOUT = 60
+DEFAULT_THRESHOLDS = {"stale_warn_days": 365, "stale_fail_days": 730, "no_release_warn_days": 365,
+                      "pluginsjson_max_age_days": 30, "future_version_tolerance_days": 31}
 # "/*! jQuery UI 1.8.11" style banner at the top of a bundled script: (name, version)
 BANNER_RE = re.compile(r"/\*[!*]?[\s*]*(?:@(?:license|preserve)\s+)?([A-Za-z][\w.@/ -]{1,40}?)[\s,-]+v?(\d+\.\d+(?:\.\d+)?)\b")
 BANNER_HEAD = 2000
@@ -70,7 +72,6 @@ class Source:
     component: str | None      # known up front for directory/marketplace sources
     repo_url: str | None = None
     ref: str | None = None
-    moodle_release: str | None = None
     download_url: str | None = None
     download_md5: str | None = None
     origin: str = ""           # where in the build scripts this source was defined
@@ -243,7 +244,31 @@ def select_directory_version(plugin: dict, moodle_release: str):
                   if any(str(sm.get("release")) == moodle_release for sm in v.get("supportedmoodles", []))]
     if not candidates:
         return None
-    return max(candidates, key=lambda v: int(str(v.get("version", "0")) or 0))
+    return max(candidates, key=ver_int)
+
+
+def ignore_matches(entry: dict):
+    """The `match` texts of an ignore entry; no match means every finding of the check."""
+    m = entry.get("match", "")
+    return [m] if isinstance(m, str) else m or [""]
+
+
+def valid_ignore(e):
+    if not isinstance(e, dict) or e.get("reason") not in IGNORE_REASONS:
+        return False
+    if not all(isinstance(e.get(k), str) and e[k].strip() for k in ("component", "check", "note")):
+        return False
+    m = e.get("match", "")
+    if not isinstance(m, str) and not (isinstance(m, list) and m and all(isinstance(x, str) for x in m)):
+        return False
+    # fixed_version is numeric and required for `fixed`, and forbidden for every other reason
+    if e["reason"] == "fixed":
+        return bool(re.fullmatch(r"\d+", str(e.get("fixed_version", ""))))
+    return "fixed_version" not in e
+
+
+def ver_int(v: dict):
+    return int(str(v.get("version", "0")) or 0)
 
 
 def normalize_repo_url(url: str | None):
@@ -418,7 +443,7 @@ class Checker:
     def __init__(self, args, config):
         self.args = args
         self.cfg = config
-        self.th = config.get("thresholds", {})
+        self.th = {**DEFAULT_THRESHOLDS, **config.get("thresholds", {})}
         self.work = os.path.abspath(args.work_dir)
         os.makedirs(os.path.join(self.work, "repos"), exist_ok=True)
         os.makedirs(os.path.join(self.work, "src"), exist_ok=True)
@@ -471,64 +496,8 @@ class Checker:
 
         live = self.fetch_live_pluglist() if self.args.live_pluglist else None
 
-        # Directory sources: dependencies, main list and legacy list
-        legacy_list = arrays.get("legacy_plugin_list", [])
-        for comp in arrays.get("moodle_plugin_list", []) + legacy_list:
-            # legacy plugins are fetched with an explicit "moosh plugin-download -v <release>"
-            release = legacy.get(comp) if comp in legacy_list else major_minor
-            src = Source("directory", comp, moodle_release=release, origin="pluginList.sh")
-            res = PluginResult(comp, src)
-            self.results.append(res)
-            entry = directory.get(comp)
-            if not entry:
-                res.add("FAIL", "directory", "Kein Eintrag in plugins.json - updatePluginList.sh ausführen.")
-                continue
-            if release is None:
-                res.add("FAIL", "directory", "Legacy-Plugin ohne erkennbares `moosh plugin-download -v`.")
-                continue
-            ver = select_directory_version(entry, release)
-            if not ver:
-                res.add("FAIL", "directory", f"Keine Version in plugins.json unterstützt Moodle {release}.")
-                continue
-            src.download_url, src.download_md5 = ver.get("downloadurl"), ver.get("downloadmd5")
-            res.release, res.version = ver.get("release"), str(ver.get("version"))
-            newest = max(entry.get("versions", []), key=lambda v: int(str(v.get("version", "0")) or 0))
-            if int(newest.get("version", 0)) > int(ver.get("version", 0)):
-                supported = ", ".join(str(s.get("release")) for s in newest.get("supportedmoodles", []))
-                res.add("INFO", "version-selection",
-                        f"Neuere Version {newest.get('release')} ({newest.get('version')}) existiert, ist aber nur "
-                        f"für Moodle {supported} freigegeben - ausgeliefert wird die neueste für {release}.")
-            res.repo_url = normalize_repo_url(entry.get("source") or ver.get("vcsrepositoryurl"))
-            res.metrics["directory_name"] = entry.get("name")
-            res.metrics["directory_last_release"] = entry.get("timelastreleased")
-            if comp in arrays.get("legacy_plugin_list", []):
-                res.add("WARN", "legacy", f"Wird für Moodle {release} geladen, nicht für {major_minor} "
-                                          f"(legacy_plugin_list).")
-            if live:
-                self.compare_live(res, live.get(comp), release)
-
-        # Custom sources from downloadPlugins.sh
-        for src in dl_sources:
-            if src.kind == "marketplace-pin":
-                entry = directory.get(src.component)
-                res = PluginResult(src.component, src, version=src.ref)
-                res.repo_url = normalize_repo_url(entry.get("source")) if entry else None
-                if entry:
-                    match = [v for v in entry.get("versions", []) if str(v.get("version")) == src.ref]
-                    if match:
-                        res.release = match[0].get("release")
-                        src.download_md5 = match[0].get("downloadmd5")
-                self.results.append(res)
-            else:
-                # The real component comes from version.php; until then (or if fetching fails) use a guess
-                # from the repo name or the download function so the report stays readable.
-                repo_url = normalize_repo_url(src.repo_url)
-                guess = src.component
-                if not guess:
-                    m = re.search(r"moodle-([a-z]+_[a-z0-9_]+)$", repo_url or "")
-                    guess = f"{m.group(1)}?" if m else f"?{src.origin}"
-                res = PluginResult(guess, src, repo_url=repo_url)
-                self.results.append(res)
+        self.add_directory_results(arrays, legacy, directory, major_minor, live)
+        self.add_custom_results(dl_sources, directory)
 
         # Fetch + check every source
         for res in self.results:
@@ -562,6 +531,67 @@ class Checker:
             self.unchecked["cve"] = "kein --cve-dir angegeben"
         self.check_osv()
 
+    def add_directory_results(self, arrays, legacy, directory, major_minor, live):
+        """Directory sources: the main list and the legacy list."""
+        legacy_list = arrays.get("legacy_plugin_list", [])
+        for comp in arrays.get("moodle_plugin_list", []) + legacy_list:
+            # legacy plugins are fetched with an explicit "moosh plugin-download -v <release>"
+            release = legacy.get(comp) if comp in legacy_list else major_minor
+            src = Source("directory", comp, origin="pluginList.sh")
+            res = PluginResult(comp, src)
+            self.results.append(res)
+            entry = directory.get(comp)
+            if not entry:
+                res.add("FAIL", "directory", "Kein Eintrag in plugins.json - updatePluginList.sh ausführen.")
+                continue
+            if release is None:
+                res.add("FAIL", "directory", "Legacy-Plugin ohne erkennbares `moosh plugin-download -v`.")
+                continue
+            ver = select_directory_version(entry, release)
+            if not ver:
+                res.add("FAIL", "directory", f"Keine Version in plugins.json unterstützt Moodle {release}.")
+                continue
+            src.download_url, src.download_md5 = ver.get("downloadurl"), ver.get("downloadmd5")
+            res.release, res.version = ver.get("release"), str(ver.get("version"))
+            newest = max(entry.get("versions", []), key=ver_int)
+            if ver_int(newest) > ver_int(ver):
+                supported = ", ".join(str(s.get("release")) for s in newest.get("supportedmoodles", []))
+                res.add("INFO", "version-selection",
+                        f"Neuere Version {newest.get('release')} ({newest.get('version')}) existiert, ist aber nur "
+                        f"für Moodle {supported} freigegeben - ausgeliefert wird die neueste für {release}.")
+            res.repo_url = normalize_repo_url(entry.get("source") or ver.get("vcsrepositoryurl"))
+            res.metrics["directory_name"] = entry.get("name")
+            res.metrics["directory_last_release"] = entry.get("timelastreleased")
+            if comp in arrays.get("legacy_plugin_list", []):
+                res.add("WARN", "legacy", f"Wird für Moodle {release} geladen, nicht für {major_minor} "
+                                          f"(legacy_plugin_list).")
+            if live:
+                self.compare_live(res, live.get(comp), release)
+
+    def add_custom_results(self, dl_sources, directory):
+        """Custom sources from downloadPlugins.sh."""
+        for src in dl_sources:
+            if src.kind == "marketplace-pin":
+                entry = directory.get(src.component)
+                res = PluginResult(src.component, src, version=src.ref)
+                res.repo_url = normalize_repo_url(entry.get("source")) if entry else None
+                if entry:
+                    match = [v for v in entry.get("versions", []) if str(v.get("version")) == src.ref]
+                    if match:
+                        res.release = match[0].get("release")
+                        src.download_md5 = match[0].get("downloadmd5")
+                self.results.append(res)
+            else:
+                # The real component comes from version.php; until then (or if fetching fails) use a guess
+                # from the repo name or the download function so the report stays readable.
+                repo_url = normalize_repo_url(src.repo_url)
+                guess = src.component
+                if not guess:
+                    m = re.search(r"moodle-([a-z]+_[a-z0-9_]+)$", repo_url or "")
+                    guess = f"{m.group(1)}?" if m else f"?{src.origin}"
+                res = PluginResult(guess, src, repo_url=repo_url)
+                self.results.append(res)
+
     def gfind(self, severity, check, message):
         self.global_findings.append(Finding(severity, check, message))
 
@@ -572,21 +602,19 @@ class Checker:
             self.gfind("WARN", "plugins.json", "plugins.json hat keinen Zeitstempel.")
             return
         age = (TODAY - dt.datetime.fromtimestamp(int(ts), dt.timezone.utc)).days
-        if age > self.th.get("pluginsjson_max_age_days", 30):
+        if age > self.th["pluginsjson_max_age_days"]:
             self.gfind("WARN", "plugins.json", f"plugins.json ist {age} Tage alt - updatePluginList.sh ausführen.")
         else:
             self.gfind("INFO", "plugins.json", f"plugins.json ist {age} Tage alt.")
 
     def fetch_live_pluglist(self):
         url = "https://download.moodle.org/api/1.3/pluglist.php"
-        for attempt in range(5):
-            try:
-                data = json.loads(http_get(url, retries=2))
-                if len(data.get("plugins", [])) > 2000:
-                    return {p["component"]: p for p in data["plugins"]}
-            except Exception:
-                pass
-            time.sleep(5)
+        try:
+            data = json.loads(http_get(url, retries=5))
+            if len(data.get("plugins", [])) > 2000:
+                return {p["component"]: p for p in data["plugins"]}
+        except Exception:
+            pass
         self.unchecked["live-pluglist"] = "Live-Verzeichnis nicht (vollständig) abrufbar"
         return None
 
@@ -595,7 +623,7 @@ class Checker:
             res.add("FAIL", "directory", "Im Live-Verzeichnis nicht mehr vorhanden - zurückgezogen?")
             return
         ver = select_directory_version(live_entry, release)
-        if ver and int(str(ver.get("version", "0")) or 0) > int(res.version or "0"):
+        if ver and ver_int(ver) > int(res.version or "0"):
             res.add("WARN", "outdated", f"Neuere Version im Verzeichnis: {ver.get('release')} "
                                         f"({ver.get('version')}), ausgeliefert wird {res.release} ({res.version}).")
 
@@ -672,7 +700,7 @@ class Checker:
                 res.add("FAIL", "artifact", f"Version im Artefakt ({m.group(1)}) passt nicht zu den "
                                              f"Metadaten ({expected_version}).")
             vdate = version_to_date(m.group(1))
-            if vdate and (vdate - TODAY).days > self.th.get("future_version_tolerance_days", 31):
+            if vdate and (vdate - TODAY).days > self.th["future_version_tolerance_days"]:
                 res.add("WARN", "version", f"Versionsnummer {m.group(1)} liegt in der Zukunft. Spätere "
                                            f"reguläre Releases mit kleinerer Nummer lassen sich nicht installieren.")
         else:
@@ -814,9 +842,9 @@ class Checker:
                                        if d["latest_release_tag"] else None))
         if d["last_commit"]:
             age = (TODAY - d["last_commit"]).days
-            if age > self.th.get("stale_fail_days", 730):
+            if age > self.th["stale_fail_days"]:
                 res.add("FAIL", "maintenance", f"Letzter Commit vor {age} Tagen - vermutlich unmaintained.")
-            elif age > self.th.get("stale_warn_days", 365):
+            elif age > self.th["stale_warn_days"]:
                 res.add("WARN", "maintenance", f"Letzter Commit vor {age} Tagen.")
         # releases: tags or directory release, whichever is newer
         last_rel = d["latest_release_tag"][1] if d["latest_release_tag"] else None
@@ -824,7 +852,7 @@ class Checker:
         if dir_ts:
             dir_dt = dt.datetime.fromtimestamp(int(dir_ts), dt.timezone.utc)
             last_rel = max(filter(None, [last_rel, dir_dt]))
-        if last_rel and (TODAY - last_rel).days > self.th.get("no_release_warn_days", 365):
+        if last_rel and (TODAY - last_rel).days > self.th["no_release_warn_days"]:
             res.add("WARN", "maintenance",
                     f"Letztes Release vor {(TODAY - last_rel).days} Tagen ({last_rel.date()}).")
         elif not last_rel:
@@ -908,7 +936,6 @@ class Checker:
         base = os.path.join(self.args.cve_dir, "cves")
         if not os.path.isdir(base):
             raise RuntimeError(f"{base} fehlt")
-        files = []
         r = subprocess.run(["grep", "-rlis", "moodle", base], capture_output=True, text=True, timeout=1800)
         files = [f for f in r.stdout.splitlines() if f.endswith(".json")]
         if not files:
@@ -1038,17 +1065,12 @@ class Checker:
         """Findings matching an entry in ignored_findings are downgraded to INFO; the reason stays visible."""
         rules = []
         for i, e in enumerate(self.cfg.get("ignored_findings", [])):
-            # The final two conditions require a numeric fixed_version exactly when reason is
-            # fixed; even an empty or malformed fixed_version is forbidden on other reasons.
-            if not isinstance(e, dict) or not all(isinstance(e.get(k), str) and e[k].strip()
-                                                  for k in ("component", "check", "note")) \
-                    or e.get("reason") not in IGNORE_REASONS or not isinstance(e.get("match", ""), str) \
-                    or (e["reason"] == "fixed") != bool(re.fullmatch(r"\d+", str(e.get("fixed_version", "")))) \
-                    or ("fixed_version" in e) != (e["reason"] == "fixed"):
+            if not valid_ignore(e):
                 self.gfind("FAIL", "ignore", f"ignored_findings[{i}] ist ungültig und wird nicht angewendet: "
                                              f"`component`, `check`, `note` und `reason` "
                                              f"({'/'.join(IGNORE_REASONS)}) sind Pflicht, bei `fixed` (und nur "
-                                             f"dort) zusätzlich `fixed_version` als Moodle-Versionsnummer.")
+                                             f"dort) zusätzlich `fixed_version` als Moodle-Versionsnummer; "
+                                             f"`match` ist ein Text oder eine Liste von Texten.")
                 continue
             rules.append([e, 0])
         targets = [(r.component, r.version, f) for r in self.results for f in r.findings]
@@ -1058,7 +1080,8 @@ class Checker:
                 continue
             for rule in rules:
                 e = rule[0]
-                if e["component"] == component and e["check"] == f.check and e.get("match", "") in f.message:
+                if e["component"] == component and e["check"] == f.check \
+                        and any(m in f.message for m in ignore_matches(e)):
                     # A matching fixed rule is still in use when the shipped version is too old;
                     # count it before the version gate to avoid a misleading unused-rule warning.
                     rule[1] += 1
@@ -1076,7 +1099,7 @@ class Checker:
         vulns_checked = not self.args.offline and "cve" not in self.unchecked
         for e, hits in rules:
             if not hits and (e["check"] != "vulnerability" or vulns_checked):
-                match = f", match „{e['match']}“" if e.get("match") else ""
+                match = f", match „{' / '.join(ignore_matches(e))}“" if e.get("match") else ""
                 self.gfind("WARN", "ignore", f"ignored_findings-Eintrag `{e['component']}` / `{e['check']}`{match} "
                                              f"trifft auf keinen Befund zu - Eintrag entfernen oder anpassen.")
 
@@ -1135,7 +1158,7 @@ class Checker:
             "global_findings": [f.as_dict() for f in self.global_findings],
             "plugins": [{"component": r.component, "source": r.source.kind, "origin": r.source.origin,
                          "ref": r.source.ref, "release": r.release, "version": r.version, "repo": r.repo_url,
-                         "worst": r.worst, "metrics": {k: v for k, v in r.metrics.items()},
+                         "worst": r.worst, "metrics": r.metrics,
                          "findings": [f.as_dict() for f in r.findings]} for r in self.results],
         }
 

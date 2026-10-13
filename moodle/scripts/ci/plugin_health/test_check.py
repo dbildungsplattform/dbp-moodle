@@ -410,6 +410,15 @@ class Vulnerabilities(unittest.TestCase):
             self.assertEqual(f.severity, "FAIL")
             self.assertTrue(any(x.severity == "FAIL" and x.check == "ignore" for x in c.global_findings))
 
+    def test_match_list_ignores_when_any_text_matches(self):
+        entry = {"component": "mod_x", "check": "vulnerability", "reason": "false_positive", "note": "n"}
+        _, f = self.run_ignore([{**entry, "match": ["CVE-9", "CVE-1"]}], "2026020100")
+        self.assertEqual(f.severity, "INFO")
+        _, f = self.run_ignore([{**entry, "match": ["CVE-9", "CVE-8"]}], "2026020100")
+        self.assertEqual(f.severity, "FAIL")
+        c, _ = self.run_ignore([{**entry, "match": []}], "2026020100")
+        self.assertTrue(any(x.severity == "FAIL" and x.check == "ignore" for x in c.global_findings))
+
     def test_entry_for_other_component_does_not_apply(self):
         _, f = self.run_ignore([{"component": "mod_a", "check": "vulnerability", "match": "CVE-1",
                                  "reason": "false_positive", "note": "n"}], "2026020100")

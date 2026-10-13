@@ -8,5 +8,9 @@
 .AppleDouble
 .LSOverride
 
+# Python files
+*.pyc
+__pycache__/
+
 # Local test files
 tmp/
