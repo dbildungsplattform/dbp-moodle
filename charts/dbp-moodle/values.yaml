@@ -193,7 +193,7 @@ dbpMoodle:
     # -- Which moodle-tools image to use
     image:
       repository: "ghcr.io/dbildungsplattform/moodle-tools"
-      tag: "1.2.0"
+      tag: "1.2.1"
 
   moodleUpdatePreparationHook:
     rules:
@@ -259,7 +259,7 @@ dbpMoodle:
     dump_kind: "full" # Possible values: full, custom
     image:
       repository: "ghcr.io/dbildungsplattform/moodle-tools"
-      tag: "1.2.0"
+      tag: "1.2.1"
     resources:
       limits:
         cpu: 2000m
@@ -708,7 +708,7 @@ etherpad-postgresql:
 moodlecronjob:
   image:
     repository: "ghcr.io/dbildungsplattform/moodle-tools"
-    tag: "1.2.0"
+    tag: "1.2.1"
   clusterRole:
     create: false
   serviceAccount:
@@ -760,7 +760,7 @@ moodlecronjob:
 backup-cronjob:
   image:
     repository: "ghcr.io/dbildungsplattform/moodle-tools"
-    tag: "1.2.0"
+    tag: "1.2.1"
   clusterRole:
     create: false
   serviceAccount:
