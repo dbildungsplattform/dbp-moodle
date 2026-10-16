@@ -88,16 +88,6 @@ download_oidc() {
     rm -rf dbp-moodle-plugin-oidc/
 }
 
-download_boost_magnific() {
-    # The maintainer stopped publishing new versions to the Moodle marketplace; the
-    # only remaining published version (9.6.2, requires Moodle >= 4.4) has broken
-    # supported-versions metadata ("Moodle 1.9"), so "moosh plugin-download -v 4.5"
-    # refuses it. Download that version directly instead. New releases are only
-    # distributed via https://eduardokraus.com/marketplace-plugins/plugin/theme_boost_magnific
-    curl -sSfL "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026080600/download" \
-        -o theme_boost_magnific.zip
-}
-
 download_booking() {
     target_tag="v9.7.10-stable"
 
@@ -146,8 +136,6 @@ download_dynamicformat() {
 }
 
 download_oidc
-download_boost_magnific
-check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
 download_topcoll

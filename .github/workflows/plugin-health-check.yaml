@@ -1,0 +1,169 @@
+---
+# Prüft alle Moodle-Plugins, die das Image ausliefert (pluginList.sh, plugins.json und die
+# Sonderfälle in downloadPlugins.sh): Wartungszustand, Pins, Lizenz, gebündelte Bibliotheken (OSV),
+# CVEs (CVEProject/cvelistV5), GitHub-Advisories und bekannte Fix-Signaturen.
+# Logik und Konfiguration: moodle/scripts/ci/plugin_health/ (check.py, config.json).
+name: Moodle Plugin Health Check
+
+on:
+  schedule:
+    - cron: '23 4 * * 1' # montags 04:23 UTC
+  workflow_dispatch:
+    inputs:
+      update_issue:
+        description: 'Tracking-Issue mit dem Ergebnis aktualisieren'
+        type: boolean
+        default: false
+      skip_cve:
+        description: 'CVE-Abgleich überspringen (schneller, Bericht markiert ihn als nicht geprüft)'
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'moodle/scripts/install/pluginList.sh'
+      - 'moodle/scripts/install/plugins.json'
+      - 'moodle/scripts/install/downloadPlugins.sh'
+      - 'moodle/Dockerfile'
+      - 'moodle/scripts/ci/plugin_health/**'
+      - '.github/workflows/plugin-health-check.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-health-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CHECK_DIR: moodle/scripts/ci/plugin_health
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      result: ${{ steps.run.outputs.rc }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # für den Basisstand im PR
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit-Tests des Prüfskripts
+        run: python -m unittest discover -s "$CHECK_DIR" -p 'test_*.py' -v
+
+      - name: CVE-Liste holen (CVEProject/cvelistV5, nur JSON ab 2015)
+        if: ${{ inputs.skip_cve != true }}
+        run: |
+          git clone -q --depth 1 --filter=blob:none --sparse \
+            https://github.com/CVEProject/cvelistV5.git "$RUNNER_TEMP/cvelist"
+          cd "$RUNNER_TEMP/cvelist"
+          git sparse-checkout set $(seq -f 'cves/%g' 2015 "$(date +%Y)")
+          echo "CVE-Stand: $(git log -1 --format=%cI)"
+
+      - name: Basisstand prüfen (nur PR)
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git worktree add "$RUNNER_TEMP/base" "${{ github.event.pull_request.base.sha }}"
+          set +e
+          # Basisbericht nicht in die Job-Zusammenfassung schreiben. GITHUB_* lässt sich nicht über
+          # `env:` überschreiben, deshalb die Variable erst für den Prozess entfernen.
+          env -u GITHUB_STEP_SUMMARY python "$CHECK_DIR/check.py" \
+            --repo-root "$RUNNER_TEMP/base" \
+            --config "$CHECK_DIR/config.json" \
+            --work-dir "$RUNNER_TEMP/plugin-health" \
+            ${{ inputs.skip_cve != true && format('--cve-dir {0}/cvelist', runner.temp) || '' }} \
+            --report-json "$RUNNER_TEMP/base-report.json" > /dev/null
+          echo "Basisstand-Exit-Code: $? (wird nicht ausgewertet, dient nur als Vergleich)"
+
+      - name: Plugins prüfen
+        id: run
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          baseline=""
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -s "$RUNNER_TEMP/base-report.json" ]; then
+            baseline="--baseline $RUNNER_TEMP/base-report.json"
+          fi
+          set +e
+          python "$CHECK_DIR/check.py" \
+            --repo-root . \
+            --work-dir "$RUNNER_TEMP/plugin-health" \
+            ${{ inputs.skip_cve != true && format('--cve-dir {0}/cvelist', runner.temp) || '' }} \
+            --live-pluglist \
+            $baseline \
+            --report-md plugin-health-report.md \
+            --report-json plugin-health-report.json > /dev/null
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "Exit-Code: $rc"
+
+      - name: Bericht hochladen
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-health-report
+          path: |
+            plugin-health-report.md
+            plugin-health-report.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Ergebnis auswerten
+        if: ${{ always() }}
+        run: |
+          rc="${{ steps.run.outputs.rc }}"
+          if [ -z "$rc" ]; then
+            echo "::error::Prüfung lief nicht durch – siehe Log."
+            exit 1
+          fi
+          if [ "$rc" != "0" ]; then
+            echo "::error::Plugin-Health-Check meldet FAIL-Befunde – Details in der Job-Zusammenfassung und im Artefakt."
+            exit 1
+          fi
+
+  issue:
+    needs: check
+    if: ${{ always() && needs.check.result != 'cancelled' && (github.event_name == 'schedule' || inputs.update_issue == true) }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-health-report
+
+      - name: Tracking-Issue anlegen oder aktualisieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          label="plugin-health"
+          gh label create "$label" --color B60205 --description "Automatischer Moodle-Plugin-Health-Check" 2>/dev/null || true
+          overall=$(jq -r .overall plugin-health-report.json)
+          {
+            echo "Automatisch erzeugt vom [Plugin-Health-Check]($RUN_URL). Nicht von Hand bearbeiten – Bewertungen gehören in \`moodle/scripts/ci/plugin_health/config.json\`."
+            echo
+            head -c 60000 plugin-health-report.md
+            if [ "$(wc -c < plugin-health-report.md)" -gt 60000 ]; then
+              echo; echo "_… gekürzt, vollständiger Bericht im Artefakt des Laufs._"
+            fi
+          } > body.md
+          number=$(gh issue list --label "$label" --state open --json number --jq '.[0].number')
+          if [ -z "$number" ]; then
+            if [ "$overall" != "OK" ] && [ "$overall" != "INFO" ]; then
+              gh issue create --title "Moodle-Plugin-Health-Check: $overall" --label "$label" --body-file body.md
+            fi
+          else
+            gh issue edit "$number" --title "Moodle-Plugin-Health-Check: $overall" --body-file body.md
+            # UNCHECKED ist kein Erfolg: nur bei OK/INFO schließen
+            if [ "$overall" = "OK" ] || [ "$overall" = "INFO" ]; then
+              gh issue close "$number" --comment "Keine FAIL/WARN-Befunde mehr ($RUN_URL)."
+            fi
+          fi
