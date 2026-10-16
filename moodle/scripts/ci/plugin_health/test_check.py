@@ -118,7 +118,7 @@ moosh plugin-download -v 3.7 customfield_old
 """
 
     def test_sources(self):
-        sources, legacy, uncalled = check.parse_download_script(self.SAMPLE)
+        sources, legacy, uncalled, unrecognized = check.parse_download_script(self.SAMPLE)
         kinds = {(s.kind, s.component, s.ref) for s in sources}
         self.assertIn(("git-tag", None, "v1.2.3"), kinds)
         self.assertIn(("git-branch", None, "main"), kinds)
@@ -127,16 +127,69 @@ moosh plugin-download -v 3.7 customfield_old
         self.assertNotIn("never", " ".join(s.repo_url or "" for s in sources))
         self.assertEqual(legacy, {"customfield_old": "3.7"})
         self.assertIn("unused", uncalled)
+        self.assertEqual(unrecognized, [])
+
+    def test_clone_options_are_skipped_and_unrecognised_downloads_are_reported(self):
+        text = """
+download_a() {
+    target_tag="v1.0.0"
+    git clone --depth 1 https://github.com/o/moodle-mod_a.git a
+}
+download_b() {
+    wget https://example.org/downloads/mod_b.zip -O mod_b.zip
+}
+download_c() {
+    curl -sSfL "https://gitlab.com/o/moodle-mod_c/-/archive/v2.0/moodle-mod_c-v2.0.zip" -o mod_c.zip
+}
+download_d() {
+    git clone "$repo_url" d     # a clone that cannot be resolved statically
+}
+download_plain() {
+    # curl is only mentioned in this comment
+    cp /scripts/install/x.json /tmp/x.json
+}
+download_a
+download_b
+download_c
+download_d
+download_plain
+"""
+        sources, _, _, unrecognized = check.parse_download_script(text)
+        self.assertEqual([(s.kind, s.repo_url, s.ref) for s in sources],
+                         [("git-tag", "https://github.com/o/moodle-mod_a.git", "v1.0.0")])
+        self.assertEqual(unrecognized, ["download_b", "download_c", "download_d"])
+
+    def test_download_outside_of_functions_is_reported(self):
+        _, _, _, unrecognized = check.parse_download_script("curl -sSfL https://example.org/x.zip -o x.zip\n")
+        self.assertEqual(unrecognized, [None])
+
+    def test_run_warns_about_unrecognised_downloads(self):
+        c = make_checker({}, moodle_version="4.5.14")
+        self.addCleanup(shutil.rmtree, c.work, True)
+        directory = {"timestamp": int(check.TODAY.timestamp()), "plugins": []}
+        with patch.object(check, "read_text", return_value=""), \
+                patch.object(check, "read_json", return_value=directory), \
+                patch.object(check, "parse_bash_arrays", return_value=({}, {})), \
+                patch.object(check, "parse_download_script",
+                             return_value=([], {}, [], ["download_b", None])):
+            c.run()
+        warns = [f.message for f in c.global_findings if f.severity == "WARN" and f.check == "build-script"]
+        self.assertEqual(len(warns), 2)
+        self.assertIn("Funktion `download_b`", warns[0])
+        self.assertIn("außerhalb von Funktionen", warns[1])
 
     def test_real_file(self):
         path = os.path.join(INSTALL, "downloadPlugins.sh")
         if not os.path.exists(path):
             self.skipTest("downloadPlugins.sh fehlt")
-        sources, legacy, _ = check.parse_download_script(check.read_text(path))
+        sources, legacy, _, unrecognized = check.parse_download_script(check.read_text(path))
         self.assertGreaterEqual(len(sources), 1)
+        # every download the build script runs must yield a source, else the plugin escapes the check
+        self.assertEqual(unrecognized, [])
         for s in sources:
             self.assertTrue(s.repo_url or s.download_url, s)
             self.assertNotIn("$", (s.ref or "") + (s.repo_url or ""), s)
+            self.assertFalse((s.repo_url or "").startswith("-"), s)
 
 
 class VersionSelection(unittest.TestCase):
@@ -247,7 +300,7 @@ class DetectedLibraries(unittest.TestCase):
         {"match": "^jquery ui\\b", "ecosystem": "npm", "package": "jquery-ui"},
         {"match": "^jquery$", "ecosystem": "npm", "package": "jquery"}]}
 
-    def run_osv(self, files, vulnerable=()):
+    def run_osv(self, files, vulnerable=(), osv=None):
         files = {"demo/version.php": GPL_HEADER + "$plugin->component = 'mod_demo';\n$plugin->version = 2024010100;\n",
                  **files}
         c = make_checker(self.CONFIG)
@@ -262,9 +315,21 @@ class DetectedLibraries(unittest.TestCase):
             asked.extend((q["package"]["name"], q["version"]) for q in queries)
             return json.dumps({"results": [{"vulns": [{"id": "GHSA-test"}]} if q["package"]["name"] in vulnerable
                                            else {} for q in queries]}).encode()
-        with patch.object(check, "http_get", fake_osv):
+        with patch.object(check, "http_get", osv or fake_osv):
             c.check_osv()
         return res, asked
+
+    def test_answer_shorter_than_the_query_list_is_unchecked_not_silent(self):
+        # Two libraries, one answer: the answers belong to the queries by position, so none can be trusted.
+        res, _ = self.run_osv({"demo/lib/ui/jquery.ui.core.js": "/*!\n * jQuery UI 1.8.11\n */\n",
+                               "demo/lib/jquery.js": "/*! jQuery v3.5.0 */"},
+                              osv=lambda *a, **k: json.dumps({"results": [{}]}).encode())
+        libs = [f for f in res.findings if f.check == "libraries"]
+        self.assertEqual(len(libs), 2)
+        for f in libs:
+            self.assertEqual(f.severity, "UNCHECKED", f.message)
+            self.assertIn("OSV-Abfrage fehlgeschlagen", f.message)
+            self.assertIn("Ergebnisse: 1 statt 2", f.message)
 
     def test_banner_finds_undeclared_library_once_per_version(self):
         res, asked = self.run_osv({
@@ -419,6 +484,31 @@ class Vulnerabilities(unittest.TestCase):
         c, _ = self.run_ignore([{**entry, "match": []}], "2026020100")
         self.assertTrue(any(x.severity == "FAIL" and x.check == "ignore" for x in c.global_findings))
 
+    def test_open_ended_checks_need_a_match(self):
+        # Without a match the entry would also swallow every finding that only appears later.
+        base = {"component": "mod_x", "reason": "false_positive", "note": "n"}
+        for check_name in ("vulnerability", "libraries"):
+            for match in ({}, {"match": ""}, {"match": [""]}, {"match": ["CVE-9", ""]}):
+                with self.subTest(check=check_name, match=match):
+                    self.assertFalse(check.valid_ignore({**base, "check": check_name, **match}))
+            self.assertTrue(check.valid_ignore({**base, "check": check_name, "match": "CVE-1"}))
+        self.assertTrue(check.valid_ignore({**base, "check": "maintenance"}))   # may still cover a whole check
+        c, f = self.run_ignore([{**base, "check": "vulnerability"}], "2026020100")
+        self.assertEqual(f.severity, "FAIL")
+        self.assertTrue(any(x.severity == "FAIL" and x.check == "ignore" for x in c.global_findings))
+
+    def test_match_does_not_cut_through_ids(self):
+        entry = {"component": "mod_x", "check": "vulnerability", "match": "CVE-2025-1234",
+                 "reason": "false_positive", "note": "n"}
+        c = make_checker({"ignored_findings": [entry]})
+        self.addCleanup(shutil.rmtree, c.work, True)
+        r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
+        c.vulnerability(r, "CVE-2025-12345 (2025-06-01, CVSS 9.8): a different and longer id")
+        c.vulnerability(r, "CVE-2025-1234 (2025-05-01, CVSS 5.0): the one that was reviewed")
+        c.results = [r]
+        c.apply_ignores()
+        self.assertEqual([f.severity for f in r.findings], ["FAIL", "INFO"])
+
     def test_entry_for_other_component_does_not_apply(self):
         _, f = self.run_ignore([{"component": "mod_a", "check": "vulnerability", "match": "CVE-1",
                                  "reason": "false_positive", "note": "n"}], "2026020100")
@@ -490,6 +580,29 @@ class RepoChecks(unittest.TestCase):
     def test_branch_pin_warns(self):
         self.assertTrue(self.has(self.run_repo("git-branch", "main"), "WARN", "pin", "Branch"))
 
+    def test_tag_sharing_its_name_with_a_branch_is_still_found(self):
+        import subprocess
+        repo = os.path.join(self.tmp, "ambiguous")
+        os.makedirs(repo)
+        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@t"}
+        for args in (["init", "-q", "-b", "main"], ["commit", "-q", "--allow-empty", "-m", "c"],
+                     ["tag", "v1.0.0"], ["branch", "v1.0.0"]):
+            subprocess.run(["git", *args], cwd=repo, env=env, check=True, capture_output=True)
+        url = "file://" + repo
+        c = make_checker({"thresholds": {}}, offline=True)
+        self.addCleanup(shutil.rmtree, c.work, True)
+        res = check.PluginResult("mod_x", check.Source("git-tag", None, url, "v1.0.0"), repo_url=url)
+        c.check_repo(res)
+        self.assertFalse(self.has(res, "FAIL", "pin"), [f.message for f in res.findings])
+
+    def test_option_like_urls_never_reach_git(self):
+        never = os.path.join(self.tmp, "never")
+        for url in ("--upload-pack=touch /tmp/pwned", "-x", "ext::sh -c id", ""):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                check.git_clone([], url, never)
+        self.assertFalse(os.path.exists(never))
+
     def test_non_github_repo_is_unchecked(self):
         self.assertTrue(self.has(self.run_repo("git-tag", "v2.0.0"), "UNCHECKED", "github"))
 
@@ -521,7 +634,7 @@ class DownloadIntegrity(unittest.TestCase):
                         patch.object(check, "read_text", return_value=""), \
                         patch.object(check, "read_json", side_effect=[{}, directory]), \
                         patch.object(check, "parse_bash_arrays", return_value=({"moodle_plugin_list": ["mod_x"]}, {})), \
-                        patch.object(check, "parse_download_script", return_value=([], {}, [])), \
+                        patch.object(check, "parse_download_script", return_value=([], {}, [], [])), \
                         patch.object(check, "http_get", side_effect=error), \
                         patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": ""}), \
                         patch("sys.stdout", new_callable=io.StringIO):
@@ -545,6 +658,142 @@ class DownloadIntegrity(unittest.TestCase):
         finally:
             check.http_get = orig
         self.assertTrue(any(f.severity == "FAIL" and f.check == "integrity" for f in res.findings))
+
+
+class GithubMeta(unittest.TestCase):
+    """github_meta against a fake API, then check_repo on a repository that is otherwise fine."""
+    REPO = {"archived": True, "disabled": False, "full_name": "o/r", "open_issues_count": 1,
+            "license": {"spdx_id": "GPL-3.0"}}
+    ADVISORY = {"ghsa_id": "GHSA-aaaa-bbbb-cccc", "cve_id": "CVE-2026-1", "summary": "XSS", "severity": "high",
+                "published_at": "2026-01-01T00:00:00Z",
+                "html_url": "https://github.com/o/r/security/advisories/GHSA-aaaa-bbbb-cccc"}
+
+    def meta_and_result(self, advisories):
+        c = make_checker({})
+        self.addCleanup(shutil.rmtree, c.work, True)
+        c.token = "t"
+
+        def api(url, headers=None, **k):
+            return json.dumps(self.REPO).encode() if url.endswith("/repos/o/r") else advisories(url)
+        with patch.object(check, "http_get", api):
+            meta = c.github_meta("https://github.com/o/r")
+        now = check.TODAY
+        repo = {"last_commit": now, "commits_12m": 1, "active_months_24m": 1, "release_tags_12m": 1,
+                "latest_release_tag": ("v1", now), "tags": [("v1", now)], "github": meta}
+        res = check.PluginResult("mod_x", check.Source("directory", "mod_x"), repo_url="https://github.com/o/r")
+        with patch.object(c, "repo_data", return_value=repo):
+            c.check_repo(res)
+        return meta, res
+
+    def test_failing_advisory_request_keeps_what_the_repository_request_found(self):
+        def refused(url):
+            raise check.urllib.error.HTTPError(url, 403, "Resource not accessible by integration", {},
+                                               io.BytesIO())
+        meta, res = self.meta_and_result(refused)
+        self.assertEqual(meta["status"], "ok")
+        self.assertIn("403", meta["advisories_status"])
+        self.assertTrue(any(f.severity == "FAIL" and "archiviert" in f.message for f in res.findings))
+        self.assertTrue(any(f.severity == "UNCHECKED" and f.check == "github" and "Advisories" in f.message
+                            for f in res.findings))
+
+    def test_published_advisory_is_a_vulnerability_until_reviewed(self):
+        meta, res = self.meta_and_result(lambda url: json.dumps([self.ADVISORY]).encode())
+        self.assertNotIn("advisories_status", meta)
+        hits = [f for f in res.findings if f.check == "vulnerability"]
+        self.assertEqual([f.severity for f in hits], ["FAIL"])
+        self.assertIn("GHSA-aaaa-bbbb-cccc / CVE-2026-1", hits[0].message)
+
+    def test_failing_repository_request_is_unchecked(self):
+        c = make_checker({})
+        self.addCleanup(shutil.rmtree, c.work, True)
+        c.token = "t"
+        with patch.object(check, "http_get", side_effect=OSError("network down")):
+            meta = c.github_meta("https://github.com/o/r")
+        self.assertTrue(meta["status"].startswith("API-Fehler"))
+        self.assertNotIn("advisories", meta)
+
+
+class SkippedChecks(unittest.TestCase):
+    """A check that did not run is not a success: it must show in the overall result."""
+
+    def test_skipped_check_is_never_a_success(self):
+        c = make_checker({})
+        self.addCleanup(shutil.rmtree, c.work, True)
+        r = check.PluginResult("mod_x", check.Source("directory", "mod_x"))
+        r.add("INFO", "license", "x")
+        c.results = [r]
+        self.assertEqual(c.overall(), "INFO")
+        c.unchecked["cve"] = "kein --cve-dir angegeben"
+        self.assertEqual(c.overall(), "UNCHECKED")
+        self.assertEqual(c.report_json()["overall"], "UNCHECKED")
+        self.assertIn("UNCHECKED", c.report_md().splitlines()[2])
+
+    def test_unreachable_live_list_is_reported_with_its_reason(self):
+        c = make_checker({})
+        self.addCleanup(shutil.rmtree, c.work, True)
+        with patch.object(check, "http_get", side_effect=OSError("403 Forbidden")):
+            self.assertIsNone(c.fetch_live_pluglist())
+        self.assertIn("403 Forbidden", c.unchecked["live-pluglist"])
+        self.assertEqual(c.overall(), "UNCHECKED")
+
+
+class LibraryMap(unittest.TestCase):
+    """The real library_map of config.json: what it claims, and what it has to leave alone."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mapping = check.compile_library_map(check.read_json(os.path.join(HERE, "config.json"))["library_map"])
+
+    def package(self, name, location=""):
+        hit = check.map_library(self.mapping, name, location)
+        return hit and hit[1]
+
+    def test_known_libraries(self):
+        for name, location, expected in (
+                ("jQuery", "lib/jquery", "jquery"),
+                ("jQuery UI", "", "jquery-ui"),
+                ("jQuery UI Effects Blind", "", "jquery-ui"),
+                ("jquery-ui", "lib/jquery-ui", "jquery-ui"),
+                ("", "lib/ui/jquery.ui.core.js", "jquery-ui"),
+                ("Bootstrap", "", "bootstrap"),
+                ("Bootstrap - https://getbootstrap.com", "", "bootstrap"),
+                ("", "dist/js/bootstrap.bundle.min.js", "bootstrap"),
+                ("Moment.js", "", "moment"),
+                ("Chart.js", "", "chart.js"),
+                ("Guzzle HTTP client", "", "guzzlehttp/guzzle"),
+                ("PDF.js", "", "pdfjs-dist"),
+                ("", "build/pdf.worker.js", "pdfjs-dist"),
+                ("Font Awesome - http://fontawesome.com", "", "@fortawesome/fontawesome-free"),
+                ("jQuery Easing - http://gsgd.co.uk/sandbox/jquery/easing/", "", "jquery.easing"),
+                ("jQuery FlexSlider - https://github.com/woocommerce/FlexSlider", "", "flexslider"),
+                ("Pace - https://github.com/CodeByZach/pace", "", "pace-js"),
+                ("QrCode", "thirdparty/QrCode", "endroid/qr-code"),
+                ("Vue.js", "", "vue"),
+                ("Sortable", "", "sortablejs"),
+                ("jsPDF", "", "jspdf")):
+            with self.subTest(name=name, location=location):
+                self.assertEqual(self.package(name, location), expected)
+
+    def test_lookalikes_are_not_claimed_by_the_library_they_resemble(self):
+        # A different project has its own versions: checking them against the parent's advisories is wrong.
+        for name, location in (
+                ("Bootstrap Datepicker", "thirdparty/bootstrap-datepicker"),
+                ("Moment Timezone", "amd/src/moment-timezone"),
+                ("Guzzle PSR-7", "vendor/guzzlehttp/psr7"),
+                ("jQuery UI Touch Punch", "lib/jquery-ui-touch-punch"),
+                ("chartjs-plugin-datalabels", "amd/src/chartjs-plugin-datalabels"),
+                ("jsPDF-AutoTable", ""),
+                ("nestedSortable", ""),
+                ("Mustache.php", ""),
+                ("markdown-it-anchor", ""),
+                ("grapesjs-preset-webpage", "")):
+            with self.subTest(name=name, location=location):
+                self.assertIsNone(self.package(name, location))
+
+    def test_only_the_last_segment_of_a_location_counts(self):
+        mapping = check.compile_library_map([{"match": "^bootstrap$", "ecosystem": "npm", "package": "bootstrap"}])
+        self.assertIsNone(check.map_library(mapping, "Something", "lib/bootstrap/vendor/other"))
+        self.assertEqual(check.map_library(mapping, "Something", "lib/bootstrap"), ("npm", "bootstrap"))
 
 
 class CveScan(unittest.TestCase):

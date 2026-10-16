@@ -13,7 +13,7 @@
   "allowed_duplicates": {
     "auth_oidc": "Upstream aus dem Verzeichnis und eLeDia-Fork werden beide ausgeliefert; pluginCheck.sh wählt zur Laufzeit (eledia_oidc)."
   },
-  "ignored_findings_doc": "Befunde, die bewertet sind und bewusst ignoriert werden (werden INFO, bleiben im Bericht). Je Eintrag: component (oder * für übergreifende Befunde), check, optional match (Textausschnitt der Meldung, z. B. die CVE-ID; auch eine Liste von Textausschnitten, dann genügt ein Treffer), reason (risk_accepted | mitigated | false_positive | fixed) und note mit nachvollziehbarer Begründung. Bei fixed zusätzlich fixed_version: gilt nur, solange die ausgelieferte Version mindestens so hoch ist.",
+  "ignored_findings_doc": "Befunde, die bewertet sind und bewusst ignoriert werden (werden INFO, bleiben im Bericht). Je Eintrag: component (oder * für übergreifende Befunde), check, match (Textausschnitt der Meldung, z. B. die CVE-ID; auch eine Liste von Textausschnitten, dann genügt ein Treffer; der Ausschnitt trifft nur ganze Wörter und Zahlen, CVE-2025-1234 also nicht CVE-2025-12345; Pflicht bei vulnerability und libraries, sonst optional - ohne match gilt der Eintrag für alle Befunde des Checks), reason (risk_accepted | mitigated | false_positive | fixed) und note mit nachvollziehbarer Begründung. Bei fixed zusätzlich fixed_version: gilt nur, solange die ausgelieferte Version mindestens so hoch ist.",
   "ignored_findings": [
     {
       "component": "auth_oidc",
@@ -106,6 +106,7 @@
       "course_reminder"
     ]
   },
+  "library_map_doc": "Zuordnung gebündelter Bibliotheken zu OSV-Paketen. Die Muster (Regex, ohne Groß-/Kleinschreibung) sehen den Bibliotheksnamen ohne ' - URL'-Zusatz und nur das letzte Pfadsegment der Ortsangabe. Muster deshalb verankern (^...$): ein unverankertes bootstrap erfasst auch Bootstrap Datepicker und prüfte dessen Version gegen die Lücken von Bootstrap. Der erste passende Eintrag gilt; ohne Treffer meldet der Check UNCHECKED.",
   "library_map": [
     {
       "match": "^pdf(\\.js|js)$|pdf\\.worker|pdf_viewer|pdfjs",
@@ -113,32 +114,32 @@
       "package": "pdfjs-dist"
     },
     {
-      "match": "jspdf",
+      "match": "^jspdf(\\.min)?(\\.js)?$",
       "ecosystem": "npm",
       "package": "jspdf"
     },
     {
-      "match": "^jquery ui\\b|jquery-ui",
+      "match": "^jquery[ .-]?ui(?:[ .-]+(?:core|widget|mouse|position|effects?(?:[ .-]+\\w+)?|accordion|autocomplete|button|checkboxradio|controlgroup|datepicker|dialog|draggable|droppable|menu|progressbar|resizable|selectable|selectmenu|slider|sortable|spinner|tabs|tooltip))?(?:\\.min)?(?:\\.js)?$",
       "ecosystem": "npm",
       "package": "jquery-ui"
     },
     {
-      "match": "sortable",
+      "match": "^sortable(\\.min)?(\\.?js)?$",
       "ecosystem": "npm",
       "package": "sortablejs"
     },
     {
-      "match": "bootstrap",
+      "match": "^bootstrap([.-](bundle|esm|min))*(\\.js)?$",
       "ecosystem": "npm",
       "package": "bootstrap"
     },
     {
-      "match": "grap(e)?sjs",
+      "match": "^grap(e)?s\\.?js$",
       "ecosystem": "npm",
       "package": "grapesjs"
     },
     {
-      "match": "font ?awesome",
+      "match": "^font[ -]?awesome(?:[ -]?(?:free|pro|v?\\d+(?:\\.\\d+)*))*$",
       "ecosystem": "npm",
       "package": "@fortawesome/fontawesome-free"
     },
@@ -158,7 +159,7 @@
       "package": "smalot/pdfparser"
     },
     {
-      "match": "chart\\.?js",
+      "match": "^chart(?:\\.min)?\\.?js$",
       "ecosystem": "npm",
       "package": "chart.js"
     },
@@ -168,7 +169,7 @@
       "package": "vue"
     },
     {
-      "match": "moment",
+      "match": "^moment(?:\\.min)?(?:\\.?js)?$",
       "ecosystem": "npm",
       "package": "moment"
     },
@@ -178,7 +179,7 @@
       "package": "dompurify"
     },
     {
-      "match": "mustache",
+      "match": "^mustache(?:\\.min)?(?:\\.?js)?$",
       "ecosystem": "npm",
       "package": "mustache"
     },
@@ -203,7 +204,7 @@
       "package": "firebase/php-jwt"
     },
     {
-      "match": "guzzle",
+      "match": "^(?:guzzlehttp/)?guzzle(?: http(?: client)?)?$",
       "ecosystem": "Packagist",
       "package": "guzzlehttp/guzzle"
     },
@@ -213,7 +214,7 @@
       "package": "jquery-bar-rating"
     },
     {
-      "match": "^thirdparty/QrCode$|endroid",
+      "match": "^qrcode$|^endroid",
       "ecosystem": "Packagist",
       "package": "endroid/qr-code"
     },
@@ -248,7 +249,7 @@
       "package": "pace-js"
     },
     {
-      "match": "markdown-?it",
+      "match": "^markdown[ -]?it$",
       "ecosystem": "npm",
       "package": "markdown-it"
     },

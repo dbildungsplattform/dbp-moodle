@@ -43,6 +43,10 @@ IGNORE_REASONS = {"risk_accepted": "Risiko akzeptiert", "mitigated": "anderweiti
                   "false_positive": "False Positive", "fixed": "behoben"}
 # checks whose findings stay WARN in a pull request even if the base branch already has them
 BASELINE_KEEP_WARN = {"vulnerability", "maintenance"}
+# checks whose ignore entries need a `match`: a blanket entry would also hide findings that do not exist yet
+MATCH_REQUIRED = {"vulnerability", "libraries"}
+# a download in the build script: anything that fetches a plugin must yield a source we can check
+DOWNLOAD_CMD_RE = re.compile(r"\b(?:curl|wget)\b|\bgit\s+clone\b")
 HTTP_TIMEOUT = 60
 DEFAULT_THRESHOLDS = {"stale_warn_days": 365, "stale_fail_days": 730, "no_release_warn_days": 365,
                       "pluginsjson_max_age_days": 30, "future_version_tolerance_days": 31}
@@ -169,8 +173,19 @@ def bash_crosscheck(plugin_list_path: str, names: list[str]):
     return result
 
 
+def has_download(code: str):
+    """Does this shell code (comments ignored) fetch something with curl, wget or git clone?"""
+    return any(DOWNLOAD_CMD_RE.search(re.split(r"\s#", line, maxsplit=1)[0])
+               for line in code.splitlines() if not line.lstrip().startswith("#"))
+
+
 def parse_download_script(text: str):
-    """Extract the custom (non-directory) plugin sources from downloadPlugins.sh."""
+    """Extract the custom (non-directory) plugin sources from downloadPlugins.sh.
+
+    Returns (sources, {component: release of a legacy `moosh plugin-download -v`}, functions that are
+    never called, called functions that download something without yielding a source). The last list
+    holds None for a download outside of any function: those plugins are not checked.
+    """
     sources: list[Source] = []
     functions = {m.group(1): m.group(2) for m in
                  re.finditer(r"^(\w+)\s*\(\)\s*\{(.*?)^\}", text, re.S | re.M)}
@@ -193,6 +208,17 @@ def parse_download_script(text: str):
     def subst(value, env):
         return re.sub(r"\$\{?(\w+)\}?", lambda m: env.get(m.group(1), m.group(0)), value)
 
+    def clone_url(args, env):
+        """The repository in `git clone <options> <url> [<dir>]`; options like `--depth 1` are skipped."""
+        try:
+            tokens = shlex.split(args, comments=True)
+        except ValueError:
+            tokens = args.split()
+        for tok in (subst(t, env) for t in tokens):
+            if "$" not in tok and re.match(r"(?:https?|git|ssh)://\S+$|git@\S+:\S+$", tok):
+                return tok
+        return None
+
     helper_release = None
     for fname, body in functions.items():
         if re.search(r'curl\b.{0,200}?github\.com/\$\{repo\}/archive/refs/tags/\$\{tag\}', body, re.S):
@@ -200,14 +226,14 @@ def parse_download_script(text: str):
     for fname in sorted(called):
         body = functions[fname]
         env = assignments(body)
-        m = re.search(r"git clone\s+(\S+)", body)
+        m = re.search(r"git clone\b([^\n]*)", body)
         if m:
-            url = subst(m.group(1), env)
-            if "target_tag" in env:
+            url = clone_url(m.group(1), env)  # None: no source, the function is reported as unrecognised
+            if url and "target_tag" in env:
                 sources.append(Source("git-tag", None, url, env["target_tag"], origin=fname))
-            elif "target_branch" in env:
+            elif url and "target_branch" in env:
                 sources.append(Source("git-branch", None, url, env["target_branch"], origin=fname))
-            else:
+            elif url:
                 sources.append(Source("git-branch", None, url, None, origin=fname))
             continue
         for um in re.finditer(r"https://marketplace\.moodle\.com/api/plugins/(\w+)/versions/(\d+)/download", body):
@@ -225,7 +251,12 @@ def parse_download_script(text: str):
     legacy = {m.group(2): m.group(1) for m in
               re.finditer(r"moosh\s+plugin-download\s+-v\s+([\d.]+)\s+(\w+)", text)}
     uncalled = sorted(set(functions) - called)
-    return sources, legacy, uncalled
+    produced = {s.origin for s in sources}
+    unrecognized = [f for f in sorted(called)
+                    if f != helper_release and f not in produced and has_download(functions[f])]
+    if has_download(top_level):
+        unrecognized.append(None)
+    return sources, legacy, uncalled, unrecognized
 
 
 def parse_moodle_version(dockerfile_text: str):
@@ -253,13 +284,29 @@ def ignore_matches(entry: dict):
     return [m] if isinstance(m, str) else m or [""]
 
 
+def snippet_in(snippet: str, message: str):
+    """`snippet` occurs in `message` without cutting through a word or number.
+
+    Plain substring search would let `CVE-2025-1234` also ignore `CVE-2025-12345`.
+    """
+    pattern = re.escape(snippet)
+    if snippet[:1].isalnum():
+        pattern = r"(?<!\w)" + pattern
+    if snippet[-1:].isalnum():
+        pattern += r"(?!\w)"
+    return re.search(pattern, message) is not None
+
+
 def valid_ignore(e):
     if not isinstance(e, dict) or e.get("reason") not in IGNORE_REASONS:
         return False
     if not all(isinstance(e.get(k), str) and e[k].strip() for k in ("component", "check", "note")):
         return False
     m = e.get("match", "")
-    if not isinstance(m, str) and not (isinstance(m, list) and m and all(isinstance(x, str) for x in m)):
+    if not isinstance(m, str) and not (isinstance(m, list) and m and all(isinstance(x, str) and x for x in m)):
+        return False
+    # Open-ended checks need a real match: without one the entry would also swallow every later finding.
+    if e["check"] in MATCH_REQUIRED and not all(x.strip() for x in ignore_matches(e)):
         return False
     # fixed_version is numeric and required for `fixed`, and forbidden for every other reason
     if e["reason"] == "fixed":
@@ -308,6 +355,17 @@ def git(args, cwd=None, timeout=600):
     if r.returncode != 0:
         raise RuntimeError(f"git {' '.join(args[:2])} failed: {r.stderr.strip()[:300]}")
     return r.stdout
+
+
+def git_clone(options, url, dest):
+    """`git clone` with the URL kept apart from the options (`--`) and refused if it could pass for one.
+
+    The URLs come from plugins.json and the build script; neither may turn into a git option
+    (`--upload-pack=...`) or a remote-helper transport (`ext::...`).
+    """
+    if not url or url.startswith("-") or re.match(r"\w+::", url):
+        raise ValueError(f"unzulässige Repository-URL {url!r}")
+    git(["clone", "-q", *options, "--", url, dest])
 
 
 def slug(url):
@@ -367,6 +425,28 @@ def read_json(path):
 
 def norm_text(s: str):
     return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def compile_library_map(entries):
+    return [(re.compile(m["match"], re.I), m["ecosystem"], m["package"]) for m in entries]
+
+
+def library_key(name: str):
+    """A library name without what vendors append to it: ' - https://...', ' (...)', ', ...'."""
+    return re.split(r"\s+[-–—]\s+|\s*\(|\s*,\s|\s*https?://", name.strip(), maxsplit=1)[0].strip()
+
+
+def map_library(mapping, name: str, location: str = ""):
+    """OSV (ecosystem, package) of a bundled library, or None. The first matching entry wins.
+
+    The patterns see the cleaned name and the last segment of the location, never the whole path:
+    `bootstrap` must not claim `Bootstrap Datepicker` or a file below `.../bootstrap-datepicker/`.
+    """
+    candidates = [c for c in (library_key(name), os.path.basename(location.rstrip("/"))) if c]
+    for rx, ecosystem, package in mapping:
+        if any(rx.search(c) for c in candidates):
+            return ecosystem, package
+    return None
 
 
 # --------------------------------------------------------------------------------------------
@@ -490,9 +570,14 @@ class Checker:
         self.check_pluginlist_age(plugins_json)
         directory = {p["component"]: p for p in plugins_json.get("plugins", [])}
 
-        dl_sources, legacy, uncalled = parse_download_script(read_text(p_dl))
+        dl_sources, legacy, uncalled, unrecognized = parse_download_script(read_text(p_dl))
         for f in uncalled:
             self.gfind("INFO", "build-script", f"Funktion `{f}` in downloadPlugins.sh wird nicht aufgerufen.")
+        for f in unrecognized:
+            what = f"Funktion `{f}`" if f else "Code außerhalb von Funktionen"
+            self.gfind("WARN", "build-script",
+                       f"{what} in downloadPlugins.sh lädt etwas herunter, aber es wurde keine Quelle erkannt - "
+                       f"dieses Plugin wird nicht geprüft. Parser in check.py erweitern.")
 
         live = self.fetch_live_pluglist() if self.args.live_pluglist else None
 
@@ -609,13 +694,14 @@ class Checker:
 
     def fetch_live_pluglist(self):
         url = "https://download.moodle.org/api/1.3/pluglist.php"
+        reason = "Antwort enthält weniger als 2000 Plugins"
         try:
             data = json.loads(http_get(url, retries=5))
             if len(data.get("plugins", [])) > 2000:
                 return {p["component"]: p for p in data["plugins"]}
-        except Exception:
-            pass
-        self.unchecked["live-pluglist"] = "Live-Verzeichnis nicht (vollständig) abrufbar"
+        except Exception as e:
+            reason = f"{type(e).__name__}: {e}"
+        self.unchecked["live-pluglist"] = f"Live-Verzeichnis nicht (vollständig) abrufbar ({reason})"
         return None
 
     def compare_live(self, res, live_entry, release):
@@ -668,10 +754,7 @@ class Checker:
     def checkout(self, url, ref):
         dest = os.path.join(self.work, "src", slug(url) + "@" + slug(ref or "HEAD"))
         if not os.path.isdir(dest):
-            args = ["clone", "-q", "--depth", "1"]
-            if ref:
-                args += ["--branch", ref]
-            git(args + [url, dest])
+            git_clone(["--depth", "1"] + (["--branch", ref] if ref else []), url, dest)
         return DirTree(dest)
 
     def check_artifact(self, res):
@@ -782,16 +865,18 @@ class Checker:
         data = {"url": url}
         dest = os.path.join(self.work, "repos", slug(url))
         if not os.path.isdir(dest):
-            git(["clone", "-q", "--bare", "--filter=blob:none", url, dest])
+            git_clone(["--bare", "--filter=blob:none"], url, dest)
         log = git(["--git-dir", dest, "log", "--all", "--no-merges", "--format=%cI"])
         dates = [dt.datetime.fromisoformat(x) for x in log.split()]
         data["last_commit"] = max(dates) if dates else None
         data["commits_12m"] = sum(1 for d in dates if (TODAY - d).days <= 365)
         data["active_months_24m"] = len({(d.year, d.month) for d in dates if (TODAY - d).days <= 730})
         tags = []
-        for line in git(["--git-dir", dest, "for-each-ref", "--format=%(refname:short)|%(creatordate:iso-strict)",
+        # Full ref names: `%(refname:short)` answers `tags/<name>` as soon as a branch has the same name.
+        for line in git(["--git-dir", dest, "for-each-ref", "--format=%(refname)|%(creatordate:iso-strict)",
                          "refs/tags"]).splitlines():
-            name, _, date = line.partition("|")
+            name, _, date = line.rpartition("|")
+            name = name[len("refs/tags/"):]
             try:
                 tags.append((name, dt.datetime.fromisoformat(date)))
             except ValueError:
@@ -824,13 +909,18 @@ class Checker:
                        full_name=meta.get("full_name"), open_issues=meta.get("open_issues_count"),
                        license=(meta.get("license") or {}).get("spdx_id"))
             full = meta.get("full_name", f"{owner}/{repo}")
+        except Exception as e:
+            return {"status": f"API-Fehler: {e}"}
+        # The advisory request has a status of its own: if it fails, what the repository request has
+        # already established (archived!) must still count.
+        try:
             adv = json.loads(http_get(f"https://api.github.com/repos/{full}/security-advisories"
                                       f"?state=published&per_page=100", hdr))
             out["advisories"] = [{"id": a.get("ghsa_id"), "cve": a.get("cve_id"), "summary": a.get("summary"),
                                   "severity": a.get("severity"), "published": a.get("published_at"),
                                   "url": a.get("html_url")} for a in adv]
         except Exception as e:
-            out["status"] = f"API-Fehler: {e}"
+            out["advisories_status"] = f"API-Fehler: {e}"
         return out
 
     def check_repo(self, res):
@@ -881,6 +971,9 @@ class Checker:
                 res.add("FAIL", "maintenance", "Repository ist archiviert.")
             if gh.get("full_name") and gh["full_name"].lower() not in res.repo_url.lower():
                 res.add("INFO", "repo", f"Repository wurde umbenannt/verschoben nach {gh['full_name']}.")
+            if gh.get("advisories_status"):
+                res.add("UNCHECKED", "github",
+                        f"GitHub-Security-Advisories nicht geprüft ({gh['advisories_status']}).")
             for a in gh.get("advisories", []):
                 ids = a["id"] + (f" / {a['cve']}" if a.get("cve") else "")
                 self.vulnerability(res, f"GitHub-Advisory {ids} ({a.get('severity')}): "
@@ -977,8 +1070,7 @@ class Checker:
 
     # ---------------- bundled libraries via OSV ----------------
     def check_osv(self):
-        mapping = [(re.compile(m["match"], re.I), m["ecosystem"], m["package"])
-                   for m in self.cfg.get("library_map", [])]
+        mapping = compile_library_map(self.cfg.get("library_map", []))
         queries, owners = [], []
 
         def same_version(a, b):  # 1.15 and 1.15.0 are the same release
@@ -989,8 +1081,7 @@ class Checker:
         for res in self.results:
             unmapped, seen, declared = [], set(), {}
             for lib in res.metrics.get("libraries", []):
-                hit = next(((eco, pkg) for rx, eco, pkg in mapping
-                            if rx.search(lib["name"]) or rx.search(lib["location"])), None)
+                hit = map_library(mapping, lib["name"], lib["location"])
                 ver = re.sub(r"^[vV]", "", lib["version"].strip())
                 if not hit or not re.match(r"^\d+(\.\d+)*", ver):
                     entry = f"{lib['name'] or '(ohne Namen)'} ({lib['location'] or 'ohne Ortsangabe'})"
@@ -1012,8 +1103,7 @@ class Checker:
             undeclared, skew = [], []
             # shortest name first: "jQuery UI" labels the finding, not "jQuery UI Effects Blind"
             for lib in sorted(res.metrics.get("detected_libraries", []), key=lambda d: len(d["name"])):
-                hit = (lib["ecosystem"], lib["package"]) if lib["package"] else next(
-                    ((eco, pkg) for rx, eco, pkg in mapping if rx.search(lib["name"])), None)
+                hit = (lib["ecosystem"], lib["package"]) if lib["package"] else map_library(mapping, lib["name"])
                 ver = lib["version"]
                 if not hit or not ver:
                     entry = f"{lib['name']} {ver or '(Version unbekannt)'} ({lib['file']})"
@@ -1044,9 +1134,13 @@ class Checker:
         try:
             results = []
             for i in range(0, len(queries), 500):
-                body = json.dumps({"queries": queries[i:i + 500]}).encode()
-                results += json.loads(http_get("https://api.osv.dev/v1/querybatch",
-                                               {"Content-Type": "application/json"}, data=body))["results"]
+                batch = queries[i:i + 500]
+                answer = json.loads(http_get("https://api.osv.dev/v1/querybatch",
+                                             {"Content-Type": "application/json"},
+                                             data=json.dumps({"queries": batch}).encode()))["results"]
+                if len(answer) != len(batch):  # answers belong to the queries by position
+                    raise ValueError(f"Ergebnisse: {len(answer)} statt {len(batch)}")
+                results += answer
         except Exception as e:
             for res, label in owners:
                 res.add("UNCHECKED", "libraries", f"{label}: OSV-Abfrage fehlgeschlagen ({e}).")
@@ -1070,7 +1164,8 @@ class Checker:
                                              f"`component`, `check`, `note` und `reason` "
                                              f"({'/'.join(IGNORE_REASONS)}) sind Pflicht, bei `fixed` (und nur "
                                              f"dort) zusätzlich `fixed_version` als Moodle-Versionsnummer; "
-                                             f"`match` ist ein Text oder eine Liste von Texten.")
+                                             f"`match` ist ein Text oder eine Liste von Texten und bei "
+                                             f"{'/'.join(sorted(MATCH_REQUIRED))} Pflicht.")
                 continue
             rules.append([e, 0])
         targets = [(r.component, r.version, f) for r in self.results for f in r.findings]
@@ -1081,7 +1176,7 @@ class Checker:
             for rule in rules:
                 e = rule[0]
                 if e["component"] == component and e["check"] == f.check \
-                        and any(m in f.message for m in ignore_matches(e)):
+                        and any(snippet_in(m, f.message) for m in ignore_matches(e)):
                     # A matching fixed rule is still in use when the shipped version is too old;
                     # count it before the version gate to avoid a misleading unused-rule warning.
                     rule[1] += 1
@@ -1149,6 +1244,8 @@ class Checker:
     # ---------------- reporting ----------------
     def overall(self):
         sev = [f.severity for f in self.global_findings] + [r.worst for r in self.results]
+        if self.unchecked:  # a check that did not run (no CVE data, live list unreachable) is no success
+            sev.append("UNCHECKED")
         return max(sev, key=lambda s: SEV_RANK[s]) if sev else "OK"
 
     def report_json(self):

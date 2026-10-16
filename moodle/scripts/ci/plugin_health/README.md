@@ -20,13 +20,16 @@ Workflow: `.github/workflows/plugin-health-check.yaml`. Ergebnis: Job-Zusammenfa
 | Pin auf Branch statt Tag; neuerer Tag in derselben Release-Linie; Tag existiert nicht | `downloadPlugins.sh` + Git | WARN / WARN / FAIL |
 | Neuere Version im Live-Verzeichnis als in `plugins.json` | download.moodle.org | WARN |
 | Gleiches Plugin aus zwei Quellen; Versions-Downgrade zwischen ihnen | alle Quellen | FAIL / WARN |
+| Download in `downloadPlugins.sh`, aus dem keine Quelle erkannt wird | `downloadPlugins.sh` | WARN |
 | CVE nennt das Plugin | CVEProject/cvelistV5 | FAIL bis bewertet |
 | Veröffentlichtes GitHub-Security-Advisory | GitHub-API | FAIL bis bewertet |
 | Gebündelte Bibliothek mit bekannter Lücke | `thirdpartylibs.xml`, Dateien im Artefakt + OSV | FAIL bis bewertet |
 | `thirdpartylibs.xml` nennt eine andere Version, als im Artefakt steckt | Dateikopf der Bibliothek | WARN |
 
 Alles, was nicht geprüft werden konnte (Netzwerk, Bitbucket, Bibliothek ohne OSV-Zuordnung …),
-steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg.
+steht als **UNCHECKED** im Bericht. UNCHECKED ist kein Erfolg: Das Gesamtergebnis ist dann mindestens
+UNCHECKED, auch wenn eine ganze Prüfung fehlt (kein CVE-Verzeichnis, Live-Verzeichnis nicht erreichbar);
+das Tracking-Issue wird dadurch nicht geschlossen.
 Andere HTTP-Fehler als 404/410, etwa Authentifizierungsfehler, Rate-Limits oder Serverfehler,
 bleiben bei Artefakt-Downloads UNCHECKED.
 
@@ -63,9 +66,12 @@ bleiben bei Artefakt-Downloads UNCHECKED.
 
 * `component` und `check` stehen so im Bericht (`### mod_beispiel`, **maintenance**). Für Befunde aus
   „Übergreifend“ ist `component` `*`.
-* `match` (optional) ist ein Textausschnitt der Meldung und grenzt ein, wenn ein Plugin mehrere Befunde
+* `match` ist ein Textausschnitt der Meldung und grenzt ein, wenn ein Plugin mehrere Befunde
   desselben Checks hat. Auch eine Liste von Textausschnitten ist erlaubt; ein Treffer genügt (ein Eintrag
-  für mehrere CVEs mit derselben Begründung). Keine Zahlen verwenden, die sich ändern („vor 800 Tagen“).
+  für mehrere CVEs mit derselben Begründung). Der Ausschnitt trifft nur ganze Wörter und Zahlen:
+  `CVE-2025-1234` ignoriert nicht `CVE-2025-12345`. Keine Zahlen verwenden, die sich ändern („vor 800 Tagen“).
+  Bei `vulnerability` und `libraries` ist `match` Pflicht, sonst würde der Eintrag auch Befunde ignorieren,
+  die erst später auftauchen. Bei den übrigen Checks gilt ein Eintrag ohne `match` für alle Befunde des Checks.
 * `reason`: `risk_accepted` (Risiko akzeptiert), `mitigated` (anderweitig mitigiert),
   `false_positive` (auch: nicht betroffen) oder `fixed`. `note` ist Pflicht.
 * `fixed_version` (Pflicht bei `fixed`, sonst nicht erlaubt) ist die Versionsnummer aus `version.php`,
@@ -99,8 +105,9 @@ GITHUB_TOKEN=$(gh auth token) python moodle/scripts/ci/plugin_health/check.py \
 ## Grenzen
 
 * Sonderfälle in `downloadPlugins.sh` werden statisch erkannt (git clone + `target_tag`/`target_branch`,
-  GitHub-Archive, Marketplace-URLs, `download_github_release`). Neue Muster dort ergeben eine WARN
-  „keine Quelle erkannt“ - dann Parser erweitern.
+  GitHub-Archive, Marketplace-URLs, `download_github_release`). Ruft eine Funktion (oder Code außerhalb von
+  Funktionen) `curl`, `wget` oder `git clone` auf, ohne dass daraus eine Quelle erkannt wird, ergibt das eine
+  WARN (Check `build-script`) - dann Parser erweitern. Bis dahin wird dieses Plugin nicht geprüft.
 * Der CVE-Abgleich ist textbasiert (Komponentenname, Plugin-Name, Repo-Name, Aliase). Er findet
   Kandidaten, keine Gewissheit; deshalb die Pflicht zur Bewertung.
 * Die Versionen in `thirdpartylibs.xml` sind Herstellerangaben und können falsch sein. Deshalb sucht
@@ -111,5 +118,8 @@ GITHUB_TOKEN=$(gh auth token) python moodle/scripts/ci/plugin_health/check.py \
   Plugin-Wurzelverzeichnis zählt nicht, dort stehen überwiegend Build-Werkzeuge.
 * Das ist eine Heuristik: Minifizierte oder umbenannte Bibliotheken ohne Versionskopf und PHP-Bibliotheken
   ohne Composer-Metadaten bleiben unerkannt. Ein erkannter Name ohne Eintrag in `library_map` wird als
-  UNCHECKED gemeldet - dann dort das OSV-Paket ergänzen.
+  UNCHECKED gemeldet - dann dort das OSV-Paket ergänzen. Die Muster in `library_map` sehen den Namen (ohne
+  „ - URL“-Zusatz) und nur das letzte Pfadsegment der Ortsangabe und sind zu verankern (`^bootstrap$`): Ein
+  loses `bootstrap` würde auch `Bootstrap Datepicker` erfassen und dessen Version gegen die Lücken von
+  Bootstrap prüfen. Der erste passende Eintrag gilt.
 * Bitbucket-Repos (`format_tiles`) erhalten keine GitHub-Metadaten.
