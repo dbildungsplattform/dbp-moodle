@@ -1,4 +1,14 @@
 # Changelog
+## [1.11.0] - 2026-10-21
+### Changes
+- **DBP-2609** Prepare for PHP security release (CVE-2026-109618, CVE-2026-109619)
+  - Updates `php-fpm-trixie` from 8.2.33 to 8.3.35 (image); Moodle 4.5 LTS supports PHP 8.1-8.3
+  - Updates Moodle from 4.5.14 to 4.5.15
+  - Updates plugins: availability_cohort v4.5-r4, filter_filtercodes 3.1.0, filter_shortcodes 1.2.0, local_wunderbyte_table 3.3.3, theme_boost_union v4.5-r50
+  - Holds qtype_stack at 4.13.1 (2026080600) to match the goemaxima image; new `plugin_version_caps` in `pluginList.sh`
+
+-  Use Image 4.5.15-fpm-trixie-8.3.35-dbp1 as default
+
 ## [1.10.0] - 2026-10-09
 ### Changes
 - **DBP-2563** Serve a deny-all `robots.txt` for Etherpad

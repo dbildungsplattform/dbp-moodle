@@ -17066,8 +17066,29 @@
       "isPaid": false,
       "name": "Restriction by cohort",
       "source": "https://github.com/moodle-an-hochschulen/moodle-availability_cohort",
-      "timelastreleased": 1785950143,
+      "timelastreleased": 1791695519,
       "versions": [
+        {
+          "downloadmd5": "4fb2d7177114a006304af32844061145",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2026042003/download",
+          "id": 28555,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.2-r3",
+          "supportedmoodles": [
+            {
+              "release": "5.2",
+              "version": 2026032700
+            }
+          ],
+          "timecreated": 1791695502,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.2-r3",
+          "version": "2026042003"
+        },
         {
           "downloadmd5": "79e7c87757052364c35741dd7dc4cc62",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2026042002/download",
@@ -17109,6 +17130,27 @@
           "vcssystemother": null,
           "vcstag": "v5.2-r1",
           "version": "2026042000"
+        },
+        {
+          "downloadmd5": "4750f0162ceced269c3289bd60217bf4",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2025100604/download",
+          "id": 28556,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.1-r4",
+          "supportedmoodles": [
+            {
+              "release": "5.1",
+              "version": 2025100600
+            }
+          ],
+          "timecreated": 1791695506,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.1-r4",
+          "version": "2025100604"
         },
         {
           "downloadmd5": "30a2debc01e09ff268d35631bb8a6581",
@@ -17172,6 +17214,27 @@
           "vcssystemother": null,
           "vcstag": "v5.1-r1",
           "version": "2025100600"
+        },
+        {
+          "downloadmd5": "d3b3eea0efa21dcf1b9958b93a3bc0b6",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2025041405/download",
+          "id": 28557,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.0-r5",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            }
+          ],
+          "timecreated": 1791695514,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.0-r5",
+          "version": "2025041405"
         },
         {
           "downloadmd5": "64046f63057d03edd504604009152c73",
@@ -17256,6 +17319,27 @@
           "vcssystemother": null,
           "vcstag": "v5.0-r1",
           "version": "2025041400"
+        },
+        {
+          "downloadmd5": "c509da0828db55c47c2e6ee98305eed3",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2024100704/download",
+          "id": 28558,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v4.5-r4",
+          "supportedmoodles": [
+            {
+              "release": "4.5",
+              "version": 2024100700
+            }
+          ],
+          "timecreated": 1791695519,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v4.5-r4",
+          "version": "2024100704"
         },
         {
           "downloadmd5": "9dfb444c9bed84c7b58a14e1c43ecb64",
@@ -17835,8 +17919,74 @@
       "isPaid": false,
       "name": "Unilabel",
       "source": "https://github.com/grabs/moodle-mod_unilabel",
-      "timelastreleased": 1790264150,
+      "timelastreleased": 1791882636,
       "versions": [
+        {
+          "downloadmd5": "867a748f08c682ddeb4ce5f047933ec7",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_unilabel/versions/2025042501/download",
+          "id": 28774,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.3.2 (Build: 2026101300)",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            },
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1791882636,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/grabs/moodle-mod_unilabel",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": null,
+          "version": "2025042501"
+        },
+        {
+          "downloadmd5": "3e885b2e3de6f61e3688385b731c219f",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_unilabel/versions/2025042500/download",
+          "id": 28548,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.3.1 (Build: 2026101000)",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            },
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1791645990,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/grabs/moodle-mod_unilabel",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": null,
+          "version": "2025042500"
+        },
         {
           "downloadmd5": "60c5993c85730d4121ae81c74042d16c",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_unilabel/versions/2025042400/download",
@@ -22192,7 +22342,7 @@
       "isPaid": false,
       "name": "STACK",
       "source": "https://github.com/maths/moodle-qtype_stack",
-      "timelastreleased": 1786096189,
+      "timelastreleased": 1792146143,
       "versions": [
         {
           "downloadmd5": "7c42bacddb00521f7af7fa1d08dc429c",
@@ -24266,8 +24416,37 @@
       "isPaid": false,
       "name": "Workplace course certificate",
       "source": "https://github.com/moodleworkplace/moodle-mod_coursecertificate",
-      "timelastreleased": 1789489217,
+      "timelastreleased": 1791315077,
       "versions": [
+        {
+          "downloadmd5": "6520388a6cb4596c492ff4f25ed10300",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_coursecertificate/versions/2026100600/download",
+          "id": 28331,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "5.0.11",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            }
+          ],
+          "timecreated": 1791315077,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.0.11",
+          "version": "2026100600"
+        },
         {
           "downloadmd5": "e87e06617c888aacb5d4b99dfb8cb5b0",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_coursecertificate/versions/2026091500/download",
@@ -25729,8 +25908,37 @@
       "isPaid": false,
       "name": "Workplace certificate manager",
       "source": "https://github.com/moodleworkplace/moodle-tool_certificate",
-      "timelastreleased": 1789540687,
+      "timelastreleased": 1791315074,
       "versions": [
+        {
+          "downloadmd5": "f7e3ad921807d1647ba2555acfc965b7",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/tool_certificate/versions/2026100600/download",
+          "id": 28330,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "5.0.11",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            }
+          ],
+          "timecreated": 1791315074,
+          "vcsbranch": null,
+          "vcsrepositoryurl": null,
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.0.11",
+          "version": "2026100600"
+        },
         {
           "downloadmd5": "55d2fc60fbdda7bdb3ff86bd1fa56aa8",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/tool_certificate/versions/2026091500/download",
@@ -30713,8 +30921,50 @@
       "isPaid": false,
       "name": "Boost Union",
       "source": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
-      "timelastreleased": 1791279393,
+      "timelastreleased": 1792304703,
       "versions": [
+        {
+          "downloadmd5": "24825eb75d1345bacd1d49b3085b9b02",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2026042019/download",
+          "id": 29192,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.2-r13",
+          "supportedmoodles": [
+            {
+              "release": "5.2",
+              "version": 2026032700
+            }
+          ],
+          "timecreated": 1792304595,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.2-r13",
+          "version": "2026042019"
+        },
+        {
+          "downloadmd5": "81799f18976b052564601579edfef62b",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2026042018/download",
+          "id": 28525,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.2-r12",
+          "supportedmoodles": [
+            {
+              "release": "5.2",
+              "version": 2026032700
+            }
+          ],
+          "timecreated": 1791608943,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.2-r12",
+          "version": "2026042018"
+        },
         {
           "downloadmd5": "4e3a1b78bd1152476b599e4a541b4354",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2026042016/download",
@@ -30945,6 +31195,48 @@
           "vcssystemother": null,
           "vcstag": "v5.2-r1",
           "version": "2026042000"
+        },
+        {
+          "downloadmd5": "28e71c1a80cc7b882b88cbd553f35508",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2025100652/download",
+          "id": 29193,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.1-r26",
+          "supportedmoodles": [
+            {
+              "release": "5.1",
+              "version": 2025100600
+            }
+          ],
+          "timecreated": 1792304629,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.1-r26",
+          "version": "2025100652"
+        },
+        {
+          "downloadmd5": "d67465d419e208c2d1a8f1e04c3c125c",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2025100651/download",
+          "id": 28526,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.1-r25",
+          "supportedmoodles": [
+            {
+              "release": "5.1",
+              "version": 2025100600
+            }
+          ],
+          "timecreated": 1791608971,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.1-r25",
+          "version": "2025100651"
         },
         {
           "downloadmd5": "72e3ad00325b9742aa297d649928d58d",
@@ -31407,6 +31699,48 @@
           "vcssystemother": null,
           "vcstag": "v5.1-r1",
           "version": "2025100600"
+        },
+        {
+          "downloadmd5": "eef13cd05c14b839ad12f30d9f9b522b",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2025041483/download",
+          "id": 29194,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.0-r36",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            }
+          ],
+          "timecreated": 1792304676,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.0-r36",
+          "version": "2025041483"
+        },
+        {
+          "downloadmd5": "a4ec0240f900aad7cae2a44824f59b10",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2025041482/download",
+          "id": 28527,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v5.0-r35",
+          "supportedmoodles": [
+            {
+              "release": "5.0",
+              "version": 2025041400
+            }
+          ],
+          "timecreated": 1791609016,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v5.0-r35",
+          "version": "2025041482"
         },
         {
           "downloadmd5": "3ff4e7db77df8a0c534396d38d1d0517",
@@ -32121,6 +32455,48 @@
           "vcssystemother": null,
           "vcstag": "v5.0-r1",
           "version": "2025041403"
+        },
+        {
+          "downloadmd5": "870005eea601f98c237d9d276ac175fb",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2024100802/download",
+          "id": 29195,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v4.5-r50",
+          "supportedmoodles": [
+            {
+              "release": "4.5",
+              "version": 2024100700
+            }
+          ],
+          "timecreated": 1792304703,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v4.5-r50",
+          "version": "2024100802"
+        },
+        {
+          "downloadmd5": "0c7c779dcbdf45b9c548580cca179109",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/theme_boost_union/versions/2024100801/download",
+          "id": 28528,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "v4.5-r49",
+          "supportedmoodles": [
+            {
+              "release": "4.5",
+              "version": 2024100700
+            }
+          ],
+          "timecreated": 1791609050,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v4.5-r49",
+          "version": "2024100801"
         },
         {
           "downloadmd5": "0cbef94bad32288437cf7e123ebda062",
@@ -36039,8 +36415,29 @@
       "isPaid": false,
       "name": "Completion Progress",
       "source": "https://github.com/jonof/moodle-block_completion_progress",
-      "timelastreleased": 1788132470,
+      "timelastreleased": 1791771054,
       "versions": [
+        {
+          "downloadmd5": "1a6083284fd7b389b0d6009f03f9307a",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/block_completion_progress/versions/2026101200/download",
+          "id": 28594,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "Version for Moodle 4.5 onwards",
+          "supportedmoodles": [
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1791771054,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/jonof/moodle-block_completion_progress",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v2026101200",
+          "version": "2026101200"
+        },
         {
           "downloadmd5": "808c6e2a96c56b1505cf0eda9e1d8f19",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/block_completion_progress/versions/2026083100/download",
@@ -37267,8 +37664,109 @@
       "isPaid": false,
       "name": "Shortcodes",
       "source": "https://github.com/branchup/moodle-filter_shortcodes",
-      "timelastreleased": 1791026999,
+      "timelastreleased": 1792495638,
       "versions": [
+        {
+          "downloadmd5": "db00b994d8879e3fd93a1cd12be8532f",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/filter_shortcodes/versions/2026102000/download",
+          "id": 29337,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "1.2.0",
+          "supportedmoodles": [
+            {
+              "release": "3.1",
+              "version": 2016050400
+            },
+            {
+              "release": "3.10",
+              "version": 2020102800
+            },
+            {
+              "release": "3.11",
+              "version": 2021050700
+            },
+            {
+              "release": "3.2",
+              "version": 2016110800
+            },
+            {
+              "release": "3.3",
+              "version": 2017042100
+            },
+            {
+              "release": "3.4",
+              "version": 2017102500
+            },
+            {
+              "release": "3.5",
+              "version": 2018042500
+            },
+            {
+              "release": "3.6",
+              "version": 2018111800
+            },
+            {
+              "release": "3.7",
+              "version": 2019051100
+            },
+            {
+              "release": "3.8",
+              "version": 2019111200
+            },
+            {
+              "release": "3.9",
+              "version": 2020060700
+            },
+            {
+              "release": "4.0",
+              "version": 2022030300
+            },
+            {
+              "release": "4.1",
+              "version": 2022111500
+            },
+            {
+              "release": "4.2",
+              "version": 2023041400
+            },
+            {
+              "release": "4.3",
+              "version": 2023092300
+            },
+            {
+              "release": "4.4",
+              "version": 2024041200
+            },
+            {
+              "release": "4.5",
+              "version": 2024100700
+            },
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            },
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1792495638,
+          "vcsbranch": null,
+          "vcsrepositoryurl": "https://github.com/branchup/moodle-filter_shortcodes",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": null,
+          "version": "2026102000"
+        },
         {
           "downloadmd5": "3765191bad317d60d2e976196864fc85",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/filter_shortcodes/versions/2026100200/download",
@@ -37515,8 +38013,45 @@
       "isPaid": false,
       "name": "Wunderbyte Table",
       "source": "https://github.com/Wunderbyte-GmbH/moodle-local_wunderbyte_table",
-      "timelastreleased": 1789733247,
+      "timelastreleased": 1792505484,
       "versions": [
+        {
+          "downloadmd5": "814269ce01fc609b68fa9f01af6c1a15",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/local_wunderbyte_table/versions/2026101200/download",
+          "id": 29350,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "3.3.3",
+          "supportedmoodles": [
+            {
+              "release": "4.5",
+              "version": 2024100700
+            },
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            },
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1792505484,
+          "vcsbranch": "main",
+          "vcsrepositoryurl": "https://github.com/Wunderbyte-GmbH/moodle-local_wunderbyte_table",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": null,
+          "version": "2026101200"
+        },
         {
           "downloadmd5": "e103341951d9bfa321bef2f60a5d0293",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/local_wunderbyte_table/versions/2026081801/download",
@@ -39072,8 +39607,69 @@
       "isPaid": false,
       "name": "FilterCodes",
       "source": "https://github.com/michael-milette/moodle-filter_filtercodes",
-      "timelastreleased": 1783965628,
+      "timelastreleased": 1791830389,
       "versions": [
+        {
+          "downloadmd5": "1c5af4d078f29824905ca20035252aa6",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/filter_filtercodes/versions/2026101201/download",
+          "id": 28727,
+          "isPaid": false,
+          "maturity": 200,
+          "release": "3.1.0",
+          "supportedmoodles": [
+            {
+              "release": "3.11",
+              "version": 2021050700
+            },
+            {
+              "release": "4.0",
+              "version": 2022030300
+            },
+            {
+              "release": "4.1",
+              "version": 2022111500
+            },
+            {
+              "release": "4.2",
+              "version": 2023041400
+            },
+            {
+              "release": "4.3",
+              "version": 2023092300
+            },
+            {
+              "release": "4.4",
+              "version": 2024041200
+            },
+            {
+              "release": "4.5",
+              "version": 2024100700
+            },
+            {
+              "release": "5.0",
+              "version": 2025041400
+            },
+            {
+              "release": "5.1",
+              "version": 2025100600
+            },
+            {
+              "release": "5.2",
+              "version": 2026032700
+            },
+            {
+              "release": "5.3",
+              "version": 2026091600
+            }
+          ],
+          "timecreated": 1791830389,
+          "vcsbranch": "master",
+          "vcsrepositoryurl": "https://github.com/michael-milette/moodle-filter_filtercodes",
+          "vcssystem": "git",
+          "vcssystemother": null,
+          "vcstag": "v3.1.0",
+          "version": "2026101201"
+        },
         {
           "downloadmd5": "3a4ab2f3358459a9a14b725bb51c5a1d",
           "downloadurl": "https://marketplace.moodle.com/api/plugins/filter_filtercodes/versions/2026072200/download",
@@ -39602,5 +40198,5 @@
       ]
     }
   ],
-  "timestamp": 1791288901
+  "timestamp": 1792566902
 }

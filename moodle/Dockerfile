@@ -1,6 +1,6 @@
-FROM php:8.2.33-fpm-trixie AS build
+FROM php:8.3.35-fpm-trixie AS build
 USER root
-ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.14"}
+ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.15"}
 #This is the path moodle will be placed after downloading for our Moodle Update Pipeline
 ARG MOODLE_PATH="/opt/dbp-moodle/moodle"
 ARG EXTRA_LOCALES=""
