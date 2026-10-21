@@ -156,7 +156,7 @@ download_dynamicformat
 install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( plugin_index > 0 && plugin_index % 15 == 0 )); then
+    if (( plugin_index > 0 && plugin_index % 10 == 0 )); then
         echo "Reached batch of 15 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
