@@ -22,8 +22,8 @@ RUN useradd moodle -u 1001
 RUN chmod -R +x /scripts/
 
 # Redis is the php extension php-redis required to connect to the redis session store
-#RUN apt-get update && apt-get upgrade -y && \
-#    apt-get install -y wget gpg curl acl gnupg jq ca-certificates cron locales git unzip zip autoconf && \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y wget gpg curl acl gnupg jq ca-certificates cron locales git unzip zip autoconf
 #    pecl install redis && \ 
 #    docker-php-ext-enable redis
 
