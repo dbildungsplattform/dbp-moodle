@@ -1,0 +1,90 @@
+name: Update Moodle plugins
+
+# update_plugin_list refreshes scripts/install/plugins.json (the list "moosh plugin-download" reads at
+# image build time) and opens a pull request when a plugin has a new version.
+# publish_mirror runs after such a change is merged and publishes the archives to GitHub Pages, where
+# downloadPlugins.sh falls back to them when the Moodle plugins directory is unavailable.
+# GitHub Pages has to serve the gh-pages branch (Settings -> Pages) and "Allow GitHub Actions to create
+# and approve pull requests" has to be enabled (Settings -> Actions -> General).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1' # Weekly, monday
+  push:
+    branches:
+      - main
+    paths:
+      - 'moodle/scripts/install/plugins.json'
+      - 'moodle/scripts/install/pluginList.sh'
+      - 'moodle/scripts/install/publishPluginMirror.sh'
+      - 'moodle/Dockerfile'
+      - '.github/workflows/update-plugins.yaml'
+
+jobs:
+  update_plugin_list:
+    name: "Refresh plugins.json"
+    if: ${{ github.event_name != 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checking out code to Runner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+
+      - name: Refresh plugins.json
+        id: refresh
+        run: |
+          list=moodle/scripts/install/plugins.json
+          cp "$list" "$RUNNER_TEMP/plugins.old.json"
+          bash moodle/scripts/install/updatePluginList.sh
+          # The upstream timestamp changes without any plugin changing, it must not cause a pull request.
+          if diff -q <(jq -S 'del(.timestamp)' "$RUNNER_TEMP/plugins.old.json") \
+                     <(jq -S 'del(.timestamp)' "$list") > /dev/null; then
+            git checkout -- "$list"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "plugins.json is up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pushes and pull requests made with GITHUB_TOKEN do not trigger other workflows, so no image
+      # build runs for this pull request. Push a commit to the branch by hand to get one.
+      - name: Open pull request
+        if: ${{ steps.refresh.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch=plugin-list-update
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add moodle/scripts/install/plugins.json
+          git commit -m "Update plugins.json"
+          git push --force origin "$branch"
+          if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')" ]; then
+            gh pr create --base main --head "$branch" \
+              --title "Update plugins.json" \
+              --body "Automated refresh of \`moodle/scripts/install/plugins.json\` from the Moodle plugins directory. Merging publishes the new archives to the plugin mirror on GitHub Pages."
+          fi
+
+  publish_mirror:
+    name: "Publish plugin mirror to GitHub Pages"
+    if: ${{ github.event_name != 'schedule' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Two runs pushing to gh-pages at the same time would reject each other.
+    concurrency:
+      group: plugin-mirror
+      cancel-in-progress: false
+    steps:
+      - name: Checking out code to Runner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+
+      - name: Publish plugin mirror
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash moodle/scripts/install/publishPluginMirror.sh --publish
