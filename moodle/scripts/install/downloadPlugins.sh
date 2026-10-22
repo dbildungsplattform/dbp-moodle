@@ -19,8 +19,8 @@ cd /plugins || exit 1
 
 # Network downloads fail transiently (rate limits, truncated responses, 5xx), so every download is
 # retried. The delay grows linearly (delay, 2*delay, ...), which also gives rate limits time to expire.
-download_retries="${DOWNLOAD_RETRIES:-5}"
-download_retry_delay="${DOWNLOAD_RETRY_DELAY:-30}"
+download_retries="${DOWNLOAD_RETRIES:-3}"
+download_retry_delay="${DOWNLOAD_RETRY_DELAY:-60}"
 
 # Usage: retry <description> <command> [args...]
 # The command runs in an "until" condition, where "set -e" is inactive: functions passed here must
