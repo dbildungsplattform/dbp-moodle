@@ -1,4 +1,4 @@
-FROM php:8.2.33-fpm-trixie AS build
+FROM php:8.2.35-fpm-trixie AS build
 USER root
 ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.14"}
 #This is the path moodle will be placed after downloading for our Moodle Update Pipeline
@@ -23,7 +23,7 @@ RUN chmod -R +x /scripts/
 
 # Redis is the php extension php-redis required to connect to the redis session store
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y wget gpg curl acl gnupg jq ca-certificates cron locales git unzip zip autoconf && \
+    apt-get install -y wget gpg curl acl gnupg jq ca-certificates cron locales git unzip zip autoconf
     pecl install redis && \ 
     docker-php-ext-enable redis
 
