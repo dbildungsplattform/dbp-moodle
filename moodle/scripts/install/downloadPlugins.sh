@@ -156,8 +156,8 @@ download_dynamicformat
 install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( plugin_index > 0 && plugin_index % 10 == 0 )); then
-        echo "Reached batch of 10 plugins. Sleeping for 60 seconds..."
+    if (( plugin_index > 0 && plugin_index % 3 == 0 )); then
+        echo "Reached batch of 3 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
     php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$major_minor" "$plugin"
