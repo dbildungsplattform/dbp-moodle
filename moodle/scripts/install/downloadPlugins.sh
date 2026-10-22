@@ -109,7 +109,8 @@ install_plugin_list() {
 download_oidc() {
     target_branch="v_45" # eLeDia currently doesn't use any tags, we always use the latest version on branch v_45
 
-    git clone https://github.com/dBildungsplattform/dbp-moodle-plugin-oidc.git
+    retry "git clone of dbp-moodle-plugin-oidc" \
+        git clone https://github.com/dBildungsplattform/dbp-moodle-plugin-oidc.git
     cd dbp-moodle-plugin-oidc/ || exit 1
     git checkout ${target_branch}
     cat auth/oidc/version.php
@@ -130,7 +131,8 @@ download_boost_magnific() {
 download_booking() {
     target_tag="v.10.0.5" # sic: this release is tagged with a "v." prefix
 
-    git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
+    retry "git clone of moodle-mod_booking" \
+        git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
     cd booking/ || exit 1
     git checkout ${target_tag}
     cat version.php
@@ -144,7 +146,7 @@ download_course_reminder(){
     target_tag="v1.6.0"
     download_url="https://github.com/krishnaGuptaGit/moodle-local_course_reminder/archive/refs/tags/${target_tag}.zip"
 
-    curl -sSfL "${download_url}" -o local_course_reminder.zip
+    fetch_zip local_course_reminder "${download_url}"
     echo "Downloaded course_reminder ${target_tag}"
 }
 
@@ -154,10 +156,8 @@ download_github_release() {
     repo=$2
     tag=$3
 
-    curl -sSfL --retry 5 --retry-delay 10 \
-        "https://github.com/${repo}/archive/refs/tags/${tag}.zip" -o "${plugin_name}.zip"
+    fetch_zip "$plugin_name" "https://github.com/${repo}/archive/refs/tags/${tag}.zip"
     echo "Downloaded ${plugin_name} ${tag} from github.com/${repo}"
-    check_plugin_zip "$plugin_name"
 }
 
 # The maintainer withdrew both plugins from the Moodle plugins directory, so they are no longer
@@ -176,7 +176,6 @@ download_dynamicformat() {
 
 download_oidc
 download_boost_magnific
-check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
 download_topcoll
