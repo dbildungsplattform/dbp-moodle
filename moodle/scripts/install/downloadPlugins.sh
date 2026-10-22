@@ -17,20 +17,46 @@ source "$(dirname "$0")/pluginList.sh"
 
 cd /plugins || exit 1
 
+# Network downloads fail transiently (rate limits, truncated responses, 5xx), so every download is
+# retried. The delay grows linearly (delay, 2*delay, ...), which also gives rate limits time to expire.
+download_retries="${DOWNLOAD_RETRIES:-5}"
+download_retry_delay="${DOWNLOAD_RETRY_DELAY:-30}"
+
+# Usage: retry <description> <command> [args...]
+# The command runs in an "until" condition, where "set -e" is inactive: functions passed here must
+# chain their steps with && so a failing step is not masked by a later successful one.
+retry() {
+    description=$1
+    shift
+    attempt=1
+
+    until "$@"; do
+        if (( attempt >= download_retries )); then
+            echo "ERROR: $description failed after $attempt attempts." >&2
+            return 1
+        fi
+        wait_seconds=$(( download_retry_delay * attempt ))
+        echo "WARN: $description failed (attempt $attempt/$download_retries), retrying in ${wait_seconds}s..." >&2
+        sleep "$wait_seconds"
+        attempt=$((attempt + 1))
+    done
+}
+
+# Returns (instead of exiting) so that retry can repeat the download of a bad archive.
 check_plugin_zip() {
     plugin_name=$1
     plugin_zip="/plugins/${plugin_name}.zip"
 
     if [ ! -s "$plugin_zip" ]; then
         echo "ERROR: Moodle plugin '$plugin_name' was not downloaded or is empty. Possible download error." >&2
-        exit 1
+        return 1
     fi
 
     # A ZIP that cannot be listed (e.g. an HTML error page saved as .zip) must not
     # end up in the image either.
     if ! unzip -tq "$plugin_zip" > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' is not a valid ZIP archive." >&2
-        exit 1
+        return 1
     fi
 
     # The root directory inside the ZIP is intentionally NOT checked here - it is not
@@ -39,8 +65,35 @@ check_plugin_zip() {
     # kills unzip with SIGPIPE (exit 141) on large archives and fails the check.
     if ! unzip -Z1 "$plugin_zip" | grep -E '(^|/)version\.php$' > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' contains no version.php." >&2
-        exit 1
+        return 1
     fi
+}
+
+# Download <url> as <plugin_name>.zip and validate it. Discards a previous partial download first.
+fetch_zip_once() {
+    plugin_name=$1
+    url=$2
+
+    rm -f "/plugins/${plugin_name}.zip"
+    curl -sSfL "$url" -o "/plugins/${plugin_name}.zip" && check_plugin_zip "$plugin_name"
+}
+
+fetch_zip() {
+    retry "Download of '$1' from $2" fetch_zip_once "$1" "$2"
+}
+
+# Download <plugin_name> through moosh for Moodle <version> and validate it.
+moosh_download_once() {
+    plugin_name=$1
+    version=$2
+
+    rm -f "/plugins/${plugin_name}.zip"
+    php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$version" "$plugin_name" \
+        && check_plugin_zip "$plugin_name"
+}
+
+moosh_download() {
+    retry "moosh plugin-download of '$1' (Moodle $2)" moosh_download_once "$1" "$2"
 }
 
 # "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
@@ -78,7 +131,8 @@ install_plugin_list() {
 download_oidc() {
     target_branch="v_45" # eLeDia currently doesn't use any tags, we always use the latest version on branch v_45
 
-    git clone https://github.com/dBildungsplattform/dbp-moodle-plugin-oidc.git
+    retry "git clone of dbp-moodle-plugin-oidc" \
+        git clone https://github.com/dBildungsplattform/dbp-moodle-plugin-oidc.git
     cd dbp-moodle-plugin-oidc/ || exit 1
     git checkout ${target_branch}
     cat auth/oidc/version.php
@@ -94,14 +148,15 @@ download_boost_magnific() {
     # supported-versions metadata ("Moodle 1.9"), so "moosh plugin-download -v 4.5"
     # refuses it. Download that version directly instead. New releases are only
     # distributed via https://eduardokraus.com/marketplace-plugins/plugin/theme_boost_magnific
-    curl -sSfL "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026080600/download" \
-        -o theme_boost_magnific.zip
+    fetch_zip theme_boost_magnific \
+        "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026080600/download"
 }
 
 download_booking() {
     target_tag="v9.7.10-stable"
 
-    git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
+    retry "git clone of moodle-mod_booking" \
+        git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
     cd booking/ || exit 1
     git checkout ${target_tag}
     cat version.php
@@ -115,7 +170,7 @@ download_course_reminder(){
     target_tag="v1.6.0"
     download_url="https://github.com/krishnaGuptaGit/moodle-local_course_reminder/archive/refs/tags/${target_tag}.zip"
 
-    curl -sSfL "${download_url}" -o local_course_reminder.zip
+    fetch_zip local_course_reminder "${download_url}"
     echo "Downloaded course_reminder ${target_tag}"
 }
 
@@ -125,10 +180,8 @@ download_github_release() {
     repo=$2
     tag=$3
 
-    curl -sSfL --retry 5 --retry-delay 10 \
-        "https://github.com/${repo}/archive/refs/tags/${tag}.zip" -o "${plugin_name}.zip"
+    fetch_zip "$plugin_name" "https://github.com/${repo}/archive/refs/tags/${tag}.zip"
     echo "Downloaded ${plugin_name} ${tag} from github.com/${repo}"
-    check_plugin_zip "$plugin_name"
 }
 
 # The maintainer withdrew both plugins from the Moodle plugins directory, so they are no longer
@@ -147,7 +200,6 @@ download_dynamicformat() {
 
 download_oidc
 download_boost_magnific
-check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
 download_topcoll
@@ -160,11 +212,9 @@ for plugin in "${moodle_plugin_list[@]}"; do
         echo "Reached batch of 1 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
-    php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$major_minor" "$plugin"
-    check_plugin_zip "$plugin"
+    moosh_download "$plugin" "$major_minor"
     plugin_index=$((plugin_index + 1))
 done
 
 # deprecated in release 1.9.1, remove with release >= 1.10
-moosh plugin-download -v 3.7 customfield_dynamic
-check_plugin_zip "customfield_dynamic"
+moosh_download customfield_dynamic 3.7
