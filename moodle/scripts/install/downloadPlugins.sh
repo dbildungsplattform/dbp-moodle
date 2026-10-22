@@ -92,8 +92,35 @@ moosh_download_once() {
         && check_plugin_zip "$plugin_name"
 }
 
+# Mirror of the archives moosh would download, published by publishPluginMirror.sh to GitHub Pages as
+# <url>/<moodle release>/<plugin>.zip. Set PLUGIN_FALLBACK_URL to an empty string to disable it.
+plugin_fallback_url="${PLUGIN_FALLBACK_URL-https://dbildungsplattform.github.io/dbp-moodle/plugins}"
+
+# Once moosh has failed for a plugin (after all retries) the Moodle plugins directory is considered
+# down for the rest of the build: the remaining plugins go straight to the mirror instead of each
+# spending several minutes in retries first.
+moosh_unavailable=false
+
+# Download <plugin_name> for Moodle <version>: through moosh, or from the mirror if moosh keeps failing.
 moosh_download() {
-    retry "moosh plugin-download of '$1' (Moodle $2)" moosh_download_once "$1" "$2"
+    plugin_name=$1
+    version=$2
+
+    if ! $moosh_unavailable; then
+        if retry "moosh plugin-download of '$plugin_name' (Moodle $version)" \
+            moosh_download_once "$plugin_name" "$version"; then
+            return 0
+        fi
+        moosh_unavailable=true
+    fi
+
+    if [ -z "$plugin_fallback_url" ]; then
+        echo "ERROR: moosh could not download '$plugin_name' and PLUGIN_FALLBACK_URL is empty." >&2
+        return 1
+    fi
+    echo "WARN: falling back to the plugin mirror for '$plugin_name' (Moodle $version). The version may" >&2
+    echo "WARN: be older than what moosh would download if the mirror has not been updated yet." >&2
+    fetch_zip "$plugin_name" "${plugin_fallback_url}/${version}/${plugin_name}.zip"
 }
 
 # "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
@@ -208,7 +235,8 @@ download_dynamicformat
 install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( plugin_index > 0 && plugin_index % 1 == 0 )); then
+    # The sleep exists for the rate limit of the plugins directory, the mirror has none.
+    if (( plugin_index > 0 && plugin_index % 1 == 0 )) && ! $moosh_unavailable; then
         echo "Reached batch of 1 plugins. Sleeping for 60 seconds..."
         sleep 60
     fi
