@@ -24,8 +24,8 @@ RUN chmod -R +x /scripts/
 # Redis is the php extension php-redis required to connect to the redis session store
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y wget gpg curl acl gnupg jq ca-certificates cron locales git unzip zip autoconf
-#    pecl install redis && \ 
-#    docker-php-ext-enable redis
+    pecl install redis && \ 
+    docker-php-ext-enable redis
 
 # Install psql Version 13.x like in the other bitnami moodle image
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg && \
