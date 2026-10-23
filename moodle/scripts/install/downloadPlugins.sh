@@ -121,17 +121,15 @@ download_oidc() {
 }
 
 download_boost_magnific() {
-    # The maintainer stopped publishing new versions to the Moodle marketplace; the
-    # only remaining published version (9.6.2, requires Moodle >= 4.4) has broken
-    # supported-versions metadata ("Moodle 1.9"), so "moosh plugin-download -v 4.5"
-    # refuses it. Download that version directly instead. New releases are only
-    # distributed via https://eduardokraus.com/marketplace-plugins/plugin/theme_boost_magnific
-    curl -sSfL --retry 5 --retry-delay 10 "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026080600/download" \
+    # The marketplace metadata of this plugin has been unreliable (9.6.2 was published as
+    # "Moodle 1.9" only, so "moosh plugin-download -v 4.5" refused it). Download a known-good
+    # version (9.7.2, supports Moodle 4.4-5.3) directly instead.
+    curl -sSfL --retry 5 --retry-delay 10 "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026100500/download" \
         -o theme_boost_magnific.zip
 }
 
 download_booking() {
-    target_tag="v9.7.10-stable"
+    target_tag="v.10.0.5" # sic: this release is tagged with a "v." prefix
 
     git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
     cd booking/ || exit 1
