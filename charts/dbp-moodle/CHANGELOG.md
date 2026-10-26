@@ -1,12 +1,12 @@
 # Changelog
-## [1.11.0] - 2026-10-23
+## [1.11.0] - 2026-10-26
 ### Changes
 - **DBP-2615** Update Moodle and plugins
   - Updates Moodle from 4.5.14 to 4.5.15
   - Updates plugins: availability_cohort v4.5-r4, filter_filtercodes 3.1.0, filter_shortcodes 1.2.0, local_wunderbyte_table 3.3.4, mod_booking 10.0.5, theme_boost_magnific 9.7.2, theme_boost_union v4.5-r50
   - Holds qtype_stack at 4.13.1 (2026080600) to match the goemaxima image; new `plugin_version_caps` in `pluginList.sh`
 
--  Use Image 4.5.15-fpm-trixie-8.2.35-dbp6 as default
+-  Use Image 4.5.15-fpm-trixie-8.2.35-dbp1 as default
 
 ## [1.10.0] - 2026-10-09
 ### Changes
