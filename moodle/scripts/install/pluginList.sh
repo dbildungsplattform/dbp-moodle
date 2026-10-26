@@ -49,6 +49,12 @@ plugin_list=(
     auth_oidc
 )
 
+# Plugins held back at a maximum version (<component>=<version>). updatePluginList.sh drops every
+# newer version from plugins.json, so "moosh plugin-download" picks the newest one at or below it.
+plugin_version_caps=(
+    qtype_stack=2026080600 # Must match the STACK version of the goemaxima image - bump both together
+)
+
 # Plugins pinned to an older Moodle release than the one being built - see downloadPlugins.sh.
 legacy_plugin_list=(
     customfield_dynamic

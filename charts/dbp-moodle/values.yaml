@@ -365,7 +365,7 @@ moodle:
     registry: "ghcr.io"
     repository: "dbildungsplattform/moodle"
     # -- The dbp-moodle image which is build for this helm chart
-    tag: "4.5.14-fpm-trixie-8.2.33-dbp4"
+    tag: "4.5.15-fpm-trixie-8.2.35-dbp1"
     pullPolicy: Always
     # -- Debug mode for more detailed moodle installation and log output
     debug: false
