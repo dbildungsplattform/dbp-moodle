@@ -1,4 +1,9 @@
 # Changelog
+## Unreleased
+### Changes
+- **DBP-2617** Bump Etherpad
+  - Use Image dbildungsplattform/etherpad:3.3.11.0
+
 ## [1.11.0] - 2026-10-26
 ### Changes
 - **DBP-2615** Update Moodle and plugins
