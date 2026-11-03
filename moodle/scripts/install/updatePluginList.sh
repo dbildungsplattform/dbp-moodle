@@ -35,10 +35,13 @@ for attempt in 1 2 3 4 5; do
 done
 
 wanted=$(printf '%s\n' "${plugin_list_components[@]}" | jq -R . | jq -sc .)
+caps=$(printf '%s\n' "${plugin_version_caps[@]}" | jq -R 'select(length > 0) | split("=") | {(.[0]): (.[1] | tonumber)}' | jq -sc 'add // {}')
 
-jq -S --argjson wanted "$wanted" '
+jq -S --argjson wanted "$wanted" --argjson caps "$caps" '
     { timestamp: .timestamp
-    , plugins: [ .plugins[] | select(.component as $c | $wanted | index($c)) ]
+    , plugins: [ .plugins[] | select(.component as $c | $wanted | index($c))
+                 | .component as $c
+                 | if $caps[$c] then .versions |= map(select((.version | tonumber) <= $caps[$c])) else . end ]
     }' "$tmp_file" > "$target"
 
 missing=$(jq -r --argjson wanted "$wanted" '$wanted - [.plugins[].component] | .[]' "$target")

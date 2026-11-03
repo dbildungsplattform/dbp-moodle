@@ -2,7 +2,6 @@
 set -eo pipefail
 
 major_minor="${MOODLE_VERSION%.*}"
-plugin_index=0
 
 # The plugin list is shipped in the repo as scripts/install/plugins.json, generated from
 # https://download.moodle.org/api/1.3/pluglist.php. That endpoint answers PHP's stream client
@@ -17,20 +16,21 @@ source "$(dirname "$0")/pluginList.sh"
 
 cd /plugins || exit 1
 
-check_plugin_zip() {
+# Returns non-zero instead of exiting, so download_marketplace_plugin can retry a bad download.
+validate_plugin_zip() {
     plugin_name=$1
     plugin_zip="/plugins/${plugin_name}.zip"
 
     if [ ! -s "$plugin_zip" ]; then
         echo "ERROR: Moodle plugin '$plugin_name' was not downloaded or is empty. Possible download error." >&2
-        exit 1
+        return 1
     fi
 
     # A ZIP that cannot be listed (e.g. an HTML error page saved as .zip) must not
     # end up in the image either.
     if ! unzip -tq "$plugin_zip" > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' is not a valid ZIP archive." >&2
-        exit 1
+        return 1
     fi
 
     # The root directory inside the ZIP is intentionally NOT checked here - it is not
@@ -39,8 +39,39 @@ check_plugin_zip() {
     # kills unzip with SIGPIPE (exit 141) on large archives and fails the check.
     if ! unzip -Z1 "$plugin_zip" | grep -E '(^|/)version\.php$' > /dev/null; then
         echo "ERROR: Moodle plugin '$plugin_name' contains no version.php." >&2
-        exit 1
+        return 1
     fi
+}
+
+check_plugin_zip() {
+    validate_plugin_zip "$1" || exit 1
+}
+
+# The marketplace intermittently answers with 5xx (e.g. 502 Bad Gateway). "moosh plugin-download"
+# still exits 0 and leaves an empty zip behind in that case, so success is judged by the zip itself.
+# Retries back off exponentially: 30s, 60s, 120s, ... between attempts.
+download_marketplace_plugin() {
+    plugin_name=$1
+    moodle_version=$2
+    max_attempts=5
+    retry_delay=30
+
+    for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
+        if php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$moodle_version" "$plugin_name" \
+            && validate_plugin_zip "$plugin_name"; then
+            return 0
+        fi
+
+        rm -f "/plugins/${plugin_name}.zip"
+        if (( attempt < max_attempts )); then
+            echo "Download of '$plugin_name' failed (attempt ${attempt}/${max_attempts}). Retrying in ${retry_delay}s..." >&2
+            sleep "$retry_delay"
+            retry_delay=$((retry_delay * 2))
+        fi
+    done
+
+    echo "ERROR: Giving up on Moodle plugin '$plugin_name' after ${max_attempts} attempts." >&2
+    exit 1
 }
 
 # "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
@@ -88,8 +119,16 @@ download_oidc() {
     rm -rf dbp-moodle-plugin-oidc/
 }
 
+download_boost_magnific() {
+    # The marketplace metadata of this plugin has been unreliable (9.6.2 was published as
+    # "Moodle 1.9" only, so "moosh plugin-download -v 4.5" refused it). Download a known-good
+    # version (9.7.2, supports Moodle 4.4-5.3) directly instead.
+    curl -sSfL --retry 5 --retry-delay 10 "https://marketplace.moodle.com/api/plugins/theme_boost_magnific/versions/2026100500/download" \
+        -o theme_boost_magnific.zip
+}
+
 download_booking() {
-    target_tag="v9.7.10-stable"
+    target_tag="v.10.0.5" # sic: this release is tagged with a "v." prefix
 
     git clone https://github.com/Wunderbyte-GmbH/moodle-mod_booking.git booking
     cd booking/ || exit 1
@@ -144,15 +183,8 @@ download_dynamicformat
 install_plugin_list
 
 for plugin in "${moodle_plugin_list[@]}"; do
-    if (( plugin_index > 0 && plugin_index % 15 == 0 )); then
-        echo "Reached batch of 15 plugins. Sleeping for 60 seconds..."
-        sleep 60
-    fi
-    php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$major_minor" "$plugin"
-    check_plugin_zip "$plugin"
-    plugin_index=$((plugin_index + 1))
+    download_marketplace_plugin "$plugin" "$major_minor"
 done
 
 # deprecated in release 1.9.1, remove with release >= 1.10
-moosh plugin-download -v 3.7 customfield_dynamic
-check_plugin_zip "customfield_dynamic"
+download_marketplace_plugin customfield_dynamic 3.7

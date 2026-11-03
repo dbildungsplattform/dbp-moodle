@@ -361,7 +361,7 @@ moodle:
     registry: "ghcr.io"
     repository: "dbildungsplattform/moodle"
     # -- The dbp-moodle image which is build for this helm chart
-    tag: "4.5.14-fpm-trixie-8.2.33-dbp4"
+    tag: "4.5.15-fpm-trixie-8.2.35-dbp1"
     pullPolicy: Always
     # -- Debug mode for more detailed moodle installation and log output
     debug: false
@@ -585,7 +585,7 @@ etherpadlite:
   enabled: false
   image:
     repository: "ghcr.io/dbildungsplattform/etherpad"
-    tag: "3.3.3.0"
+    tag: "3.3.11.0"
   # Currently this data is doubled with the env vars because we need the fields for backup and retore jobs
   externalDatabase:
     # -- Type of DB to provision, possible values are "postgres"
