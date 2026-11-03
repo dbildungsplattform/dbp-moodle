@@ -1,5 +1,5 @@
 # Changelog
-## Unreleased
+## [1.11.1] - 2026-11-03
 ### Changes
 - **DBP-2617** Bump Etherpad
   - Use Image dbildungsplattform/etherpad:3.3.11.0
