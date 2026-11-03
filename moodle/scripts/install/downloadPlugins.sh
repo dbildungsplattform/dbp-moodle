@@ -175,8 +175,6 @@ download_dynamicformat() {
 }
 
 download_oidc
-download_boost_magnific
-check_plugin_zip "theme_boost_magnific"
 download_booking
 download_course_reminder
 download_topcoll

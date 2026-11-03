@@ -16287,285 +16287,32 @@
       ]
     },
     {
-      "bugs": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/issues",
-      "component": "mod_pdfannotator",
+      "bugs": "https://github.com/moodle-an-hochschulen/moodle-availability_cohort/issues",
+      "component": "availability_cohort",
       "discussion": null,
-      "doc": "https://help.itc.rwth-aachen.de/en/service/8d9eb2f36eea4fcaa9abd0e1ca008b22/article/faf25c423d12497eb0f031b98be9b12e/",
-      "id": 1759,
+      "doc": "https://github.com/moodle-an-hochschulen/moodle-availability_cohort/blob/master/README.md",
+      "id": 1786,
       "isPaid": false,
-      "name": "PDF Annotation",
-      "source": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-      "timelastreleased": 1757336316,
+      "name": "Restriction by cohort",
+      "source": "https://github.com/moodle-an-hochschulen/moodle-availability_cohort",
+      "timelastreleased": 1791695519,
       "versions": [
         {
-          "downloadmd5": "9d4ef8364ec1df7697f647b3b36cb12d",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025090300/download",
-          "id": 21362,
+          "downloadmd5": "4fb2d7177114a006304af32844061145",
+          "downloadurl": "https://marketplace.moodle.com/api/plugins/availability_cohort/versions/2026042003/download",
+          "id": 28555,
           "isPaid": false,
           "maturity": 200,
-          "release": "PDF Annotator v1.5 release 9",
+          "release": "v5.2-r3",
           "supportedmoodles": [
             {
-              "release": "4.5",
-              "version": 2024100700
-            },
-            {
-              "release": "5.0",
-              "version": 2025041400
+              "release": "5.2",
+              "version": 2026032700
             }
           ],
-          "timecreated": 1757336316,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_500%2B_rc",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/releases/tag/v1.5.9",
-          "version": "2025090300"
-        },
-        {
-          "downloadmd5": "3dfe41cb29b38faa44fd6968fbbb5ada",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025071100/download",
-          "id": 20695,
-          "isPaid": false,
-          "maturity": 150,
-          "release": "PDF Annotator v1.5 release 9 Release Candidate",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            },
-            {
-              "release": "5.0",
-              "version": 2025041400
-            }
-          ],
-          "timecreated": 1752246432,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_500+_rc",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": null,
-          "version": "2025071100"
-        },
-        {
-          "downloadmd5": "70ffbdc66970c3c82fa72406cb2d1953",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025032500/download",
-          "id": 19448,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 8",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            }
-          ],
-          "timecreated": 1742901944,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_404%2B",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/releases/tag/v1.5.8",
-          "version": "2025032500"
-        },
-        {
-          "downloadmd5": "f29af8270daa38d8cbc4a7078e3a9948",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025032400/download",
-          "id": 19449,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 8",
-          "supportedmoodles": [
-            {
-              "release": "4.1",
-              "version": 2022111500
-            },
-            {
-              "release": "4.2",
-              "version": 2023041400
-            },
-            {
-              "release": "4.3",
-              "version": 2023092300
-            }
-          ],
-          "timecreated": 1742902830,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_400-403_STABLE",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": null,
-          "version": "2025032400"
-        },
-        {
-          "downloadmd5": "5ba77c64446fc39ad35241373396b5eb",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025031900/download",
-          "id": 19389,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 8",
-          "supportedmoodles": [
-            {
-              "release": "4.1",
-              "version": 2022111500
-            },
-            {
-              "release": "4.2",
-              "version": 2023041400
-            },
-            {
-              "release": "4.3",
-              "version": 2023092300
-            }
-          ],
-          "timecreated": 1742389692,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_400-403_STABLE",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": null,
-          "version": "2025031900"
-        },
-        {
-          "downloadmd5": "2635cb7163c8086f80eadfcdc96fe20c",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025031700/download",
-          "id": 19388,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 8",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            }
-          ],
-          "timecreated": 1742389258,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/releases/tag/v1.5.8",
-          "version": "2025031700"
-        },
-        {
-          "downloadmd5": "d76fb961c1a4644f8339d9a35df011fa",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2025010300/download",
-          "id": 18942,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 7",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            }
-          ],
-          "timecreated": 1738919072,
-          "vcsbranch": "main",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": null,
-          "version": "2025010300"
-        },
-        {
-          "downloadmd5": "f175e403ca2501c5912df2b43285cc8f",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2024121200/download",
-          "id": 18576,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 7",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            }
-          ],
-          "timecreated": 1735819716,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_404%2B",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": null,
-          "version": "2024121200"
-        },
-        {
-          "downloadmd5": "2229fd138aabba437a42692b1c598b33",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2024112600/download",
-          "id": 18385,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 7",
-          "supportedmoodles": [
-            {
-              "release": "4.4",
-              "version": 2024041200
-            },
-            {
-              "release": "4.5",
-              "version": 2024100700
-            }
-          ],
-          "timecreated": 1733415570,
-          "vcsbranch": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/tree/MOODLE_404%2B",
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
-          "vcssystem": "git",
-          "vcssystemother": null,
-          "vcstag": "https://github.com/rwthmoodle/moodle-mod_pdfannotator/releases/tag/v1.5.7",
-          "version": "2024112600"
-        },
-        {
-          "downloadmd5": "2a1099509f33b48aac5da1736417d951",
-          "downloadurl": "https://marketplace.moodle.com/api/plugins/mod_pdfannotator/versions/2023112900/download",
-          "id": 15721,
-          "isPaid": false,
-          "maturity": 200,
-          "release": "PDF Annotator v1.5 release 5",
-          "supportedmoodles": [
-            {
-              "release": "3.11",
-              "version": 2021050700
-            },
-            {
-              "release": "4.0",
-              "version": 2022030300
-            },
-            {
-              "release": "4.1",
-              "version": 2022111500
-            },
-            {
-              "release": "4.2",
-              "version": 2023041400
-            },
-            {
-              "release": "4.3",
-              "version": 2023092300
-            }
-          ],
-          "timecreated": 1701776671,
+          "timecreated": 1791695502,
           "vcsbranch": null,
-          "vcsrepositoryurl": "https://github.com/rwthmoodle/moodle-mod_pdfannotator",
+          "vcsrepositoryurl": null,
           "vcssystem": "git",
           "vcssystemother": null,
           "vcstag": "v1.5.5",
