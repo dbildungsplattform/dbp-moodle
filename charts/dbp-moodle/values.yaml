@@ -438,21 +438,6 @@ moodle:
       nginx.ingress.kubernetes.io/proxy-body-size: "200M"
       nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
       nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0"
-  metrics:
-    enabled: true
-    image:
-      repository: lusotycoon/apache-exporter
-      tag: v1.1.1
-    service:
-      type: ClusterIP
-    # -- Resources have to be set so that the horizontal pod autoscaler for moodle can read the moodle cpu consumption correctly
-    resources: 
-      requests:
-        cpu: 10m
-        memory: 16Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
   extraVolumeMounts:
     - name: moodle-additional-php-ini-file
       readOnly: true
