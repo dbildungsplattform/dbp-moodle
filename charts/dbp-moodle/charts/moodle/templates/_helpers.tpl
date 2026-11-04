@@ -11,17 +11,10 @@ Return the proper Moodle&trade; image name
 {{- end -}}
 
 {{/*
-Return the proper image name (for the metrics image)
-*/}}
-{{- define "moodle.metrics.image" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.metrics.image "global" .Values.global) -}}
-{{- end -}}
-
-{{/*
 Return the proper Docker Image Registry Secret Names
 */}}
 {{- define "moodle.imagePullSecrets" -}}
-{{- include "common.images.renderPullSecrets" ( dict "images" (list .Values.image .Values.metrics.image) "context" $ ) -}}
+{{- include "common.images.renderPullSecrets" ( dict "images" (list .Values.image) "context" $ ) -}}
 {{- end -}}
 
 {{/*
