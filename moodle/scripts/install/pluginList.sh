@@ -44,6 +44,7 @@ plugin_list=(
     mod_videotime
     tool_mediatime
     auth_oidc
+    tool_inactive_user_cleanup
 )
 
 # Plugins held back at a maximum version (<component>=<version>). updatePluginList.sh drops every
