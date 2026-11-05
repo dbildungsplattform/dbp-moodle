@@ -1,6 +1,6 @@
 # dbp-moodle
 
-![Version: 1.11.1](https://img.shields.io/badge/Version-1.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.5.15](https://img.shields.io/badge/AppVersion-4.5.15-informational?style=flat-square)
+![Version: 1.12.0](https://img.shields.io/badge/Version-1.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.5.15](https://img.shields.io/badge/AppVersion-4.5.15-informational?style=flat-square)
 
 This is a Helm Chart bundling some of the bitnami resources to deploy Moodle for DBildungsplattform. Extending them with features such as
 PostgreSQL support, Horizontal Autoscaling capabilities, Redis Session Store, Etherpad-Lite.
@@ -337,11 +337,6 @@ The Chart can be deployed without any modification but it is advised to set own 
 | moodle.ingress.extraHosts | list | `[]` | Any additional hostnames, needs to be "name: URL" value pairs |
 | moodle.ingress.hostname | string | `"example.de"` | The hostname of the moodle application |
 | moodle.ingress.tls | bool | `true` |  |
-| moodle.metrics.enabled | bool | `true` |  |
-| moodle.metrics.image.repository | string | `"lusotycoon/apache-exporter"` |  |
-| moodle.metrics.image.tag | string | `"v1.1.1"` |  |
-| moodle.metrics.resources | object | `{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}` | Resources have to be set so that the horizontal pod autoscaler for moodle can read the moodle cpu consumption correctly |
-| moodle.metrics.service.type | string | `"ClusterIP"` |  |
 | moodle.moodleEmail | string | `""` |  |
 | moodle.moodleLang | string | `"de"` |  |
 | moodle.moodleSiteName | string | `"Moodle"` |  |
