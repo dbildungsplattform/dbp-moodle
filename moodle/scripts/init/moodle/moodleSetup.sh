@@ -13,8 +13,8 @@ set -o pipefail
 . /scripts/init/moodle/moodle-env.sh
 
 # Load PostgreSQL Client environment for 'postgresql_remote_execute' (after 'discourse-env.sh' so that MODULE is not set to a wrong value)
-if [[ -f /scripts/init/postgres/postgresql-client-env.sh ]]; then
-    . /scripts/init/postgres/postgresql-client-env.sh
+if [[ -f /scripts/init/postgres/postgres-client-env.sh ]]; then
+    . /scripts/init/postgres/postgres-client-env.sh
 fi
 
 # Load PHP environment for cron configuration (after 'moodle-env.sh' so that MODULE is not set to a wrong value)

@@ -36,7 +36,6 @@ moodle_env_vars=(
     MOODLE_LANG
     MOODLE_USERNAME
     MOODLE_PASSWORD
-    MOODLE_DATABASE_MIN_VERSION
     MOODLE_EMAIL
     MOODLE_SMTP_HOST
     MOODLE_SMTP_PORT_NUMBER
@@ -74,10 +73,12 @@ unset moodle_env_vars
 
 # Paths
 export MOODLE_BASE_DIR="${ROOT_DIR}/moodle"
+export MOODLE_PUBLIC_DIR="${MOODLE_BASE_DIR}/public"
 export MOODLE_CONF_FILE="${MOODLE_BASE_DIR}/config.php"
 
 # Moodle persistence configuration
 export MOODLE_VOLUME_DIR="${VOLUME_DIR}/moodle"
+export MOODLE_VOLUME_PUBLIC_DIR="${MOODLE_VOLUME_DIR}/public"
 export MOODLE_DATA_DIR="${MOODLE_DATA_DIR:-${VOLUME_DIR}/moodledata}"
 export MOODLE_DATA_TO_PERSIST="${MOODLE_DATA_TO_PERSIST:-$MOODLE_BASE_DIR}"
 
@@ -95,7 +96,6 @@ export MOODLE_LANG="${MOODLE_LANG:-en}"
 # Moodle credentials
 export MOODLE_USERNAME="${MOODLE_USERNAME:-user}" # only used during the first initialization
 export MOODLE_PASSWORD="${MOODLE_PASSWORD:-moodle}" # only used during the first initialization
-export MOODLE_DATABASE_MIN_VERSION="${MOODLE_DATABASE_MIN_VERSION:-}" # only used during the first initialization
 export MOODLE_EMAIL="${MOODLE_EMAIL:-user@example.com}" # only used during the first initialization
 
 # Moodle SMTP credentials

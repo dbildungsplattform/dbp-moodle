@@ -32,10 +32,27 @@ compare_semver() {
 }
 
 get_moodle_version_by_path() {
-    if [ ! -f "$1/version.php" ]; then
-        return
+    local version_file="$1/public/version.php"
+    local version
+
+    # Fall back to the layout used by the existing Moodle 4.5 installation.
+    if [[ ! -f "$version_file" ]]; then
+        version_file="$1/version.php"
     fi
-    grep release "$1/version.php" | grep -oP '\d+\.\d+\.\d+'
+
+    [[ -f "$version_file" ]] || return 0
+    
+    version="$(
+        grep -P '^\s*\$release\s*=' "$version_file" |
+            grep -oP '\d+\.\d+(?:\.\d+)?' |
+            head -n 1
+    )"
+
+    # Normalize releases without a patch number for compare_semver.
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        version="${version}.0"
+    fi
+    printf '%s\n' "$version"
 }
 
 create_backup() {
@@ -56,35 +73,38 @@ install_new_version() {
 main() {
     
     installed_version="$(get_moodle_version_by_path "${moodle_path}")"
-    image_version="$(get_moodle_version_by_path "/opt/dbp-moodle/moodle")"
+    new_image_version="$(get_moodle_version_by_path "/opt/dbp-moodle/moodle")"
+
+    if [[ ! "$new_image_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        MODULE="dbp-update" error "Cannot determine the image Moodle version"
+        exit 1
+    fi
 
     if [[ -z "$installed_version" ]]; then
-        MODULE="dbp-update" info "No installed Moodle version detected, continuing with Bitnami fresh install"
+        MODULE="dbp-update" info "No installed Moodle version detected, continuing with fresh Moodle install"
         exit 0
     fi
-    comp_result="$(compare_semver "$installed_version" "$image_version")"
+
+    comp_result="$(compare_semver "$installed_version" "$new_image_version")"
     
     if [[ "$comp_result" == 0 ]]; then
-        MODULE="dbp-update" info "Installed version ${installed_version} is same as image version ${image_version}"
+        MODULE="dbp-update" info "Installed version ${installed_version} is same as image version ${new_image_version}"
         exit 0
     fi
     
     if [[ "$comp_result" == 1 ]]; then
-        MODULE="dbp-update" info "Starting update of installed version ${installed_version} to ${image_version}"
+        MODULE="dbp-update" info "Starting update of installed version ${installed_version} to ${new_image_version}"
     else
-        MODULE="dbp-update" error "Preventing attempted downgrade of installed version ${installed_version} to ${image_version}!"
+        MODULE="dbp-update" error "Preventing attempted downgrade of installed version ${installed_version} to ${new_image_version}!"
         MODULE="dbp-update" error "Exiting update..."
         exit 1
     fi
     MODULE="dbp-update" info "Creating local backup"
     create_backup
-    MODULE="dbp-update" info "Unpacking new moodle version"
 
-    if [[ -n "$installed_version" ]]; then
-        MODULE="dbp-update" info "Removing old Moodle (${installed_version})"
-    fi
+    MODULE="dbp-update" info "Removing old Moodle (${installed_version})"
     rm -rf "${moodle_path:?}"/*
-    install_new_version "$image_version"
+    install_new_version "$new_image_version"
 }
 
 trap onErrorRestoreBackup ERR

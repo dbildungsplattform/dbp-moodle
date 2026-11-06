@@ -88,24 +88,6 @@ moodle_validate() {
 }
 
 ########################
-# Bypass Azure for ManagedDB database version check
-# We detected some issues in the way that Azure Database for MariaDB
-# shows the version. This hack will bypass the Moodle installation check
-# Globals:
-#   MOODLE_*
-# Arguments:
-#   None
-# Returns:
-#   None
-#########################
-# TODO Migration: We use postgresql, check if this function is still required
-moodle_fix_manageddb_check() {
-    info "Changing minimum required MariaDB version to $MOODLE_DATABASE_MIN_VERSION"
-    replace_in_file "$MOODLE_BASE_DIR/admin/environment.xml" "name=\"mariadb\" version=\"[^\"]+\"" "name=\"mariadb\" version=\"$MOODLE_DATABASE_MIN_VERSION\""
-    replace_in_file "$MOODLE_BASE_DIR/admin/environment.xml" "name=\"mysql\" version=\"[^\"]+\"" "name=\"mysql\" version=\"$MOODLE_DATABASE_MIN_VERSION\""
-}
-
-########################
 # Ensure Moodle is initialized
 # Globals:
 #   MOODLE_*
@@ -221,7 +203,7 @@ EOF
     fi
 
     # Ensure Moodle cron jobs are created when running setup with a root user
-    local -a cron_cmd=("php" "${MOODLE_BASE_DIR}/admin/cli/cron.php")
+    local -a cron_cmd=("php" "${MOODLE_PUBLIC_DIR}/admin/cli/cron.php")
     if am_i_root; then
         generate_cron_conf "moodle" "${cron_cmd[*]} > /dev/null 2>> ${MOODLE_DATA_DIR}/moodle-cron.log" --run-as "$WEB_SERVER_DAEMON_USER" --schedule "*/${MOODLE_CRON_MINUTES} * * * *"
     else
@@ -294,7 +276,7 @@ moodle_install() {
     local -r http_port="${WEB_SERVER_HTTP_PORT_NUMBER:-"$WEB_SERVER_DEFAULT_HTTP_PORT_NUMBER"}"
     local -a moodle_install_args=(
         "php"
-        "/opt/dbp-moodle/moodle/admin/cli/install.php"
+        "${MOODLE_PUBLIC_DIR}/admin/cli/install.php"
         "--lang=${MOODLE_LANG}"
         "--chmod=2775"
         "--wwwroot=http://localhost:${http_port}"
@@ -309,8 +291,7 @@ moodle_install() {
         "--agree-license"
         "$@"
     )
-    # HACK: Change database version check for Azure Database for MariaDB
-    ! is_empty_value "$MOODLE_DATABASE_MIN_VERSION" && moodle_fix_manageddb_check
+
     pushd "$MOODLE_BASE_DIR" >/dev/null || exit
     # Run as web server user to avoid having to change permissions/ownership afterwards
     if am_i_root; then
@@ -336,7 +317,7 @@ moodle_upgrade() {
     pushd "$MOODLE_BASE_DIR" >/dev/null || exit
     local -a moodle_upgrade_args=(
         "php"
-        "admin/cli/upgrade.php"
+        "${MOODLE_PUBLIC_DIR}/admin/cli/upgrade.php"
         "--non-interactive"
         "--allow-unstable"
     )

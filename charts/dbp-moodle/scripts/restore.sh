@@ -62,14 +62,29 @@ export DUPLY_HOME="/etc/duply"
 # Duply restore logic
 /usr/bin/duply default restore Full "$RESTORE_DATE"
 
+echo "=== Extract backup files ==="
+tar -xzf /tmp/Full/tmp/backup/moodle.tar.gz -C /tmp/ --no-same-owner
+tar -xzf /tmp/Full/tmp/backup/moodledata.tar.gz -C /tmp/ --no-same-owner
+
+# Validate the extracted installation before deleting existing files.
+if [[ ! -f /tmp/mountData/moodle/config.php ]] ||
+    [[ ! -f /tmp/mountData/moodle/public/index.php &&
+       ! -f /tmp/mountData/moodle/index.php ]]; then
+    echo "=== Backup does not contain a recognizable Moodle installation ===" >&2
+    exit 1
+fi
+
+if [[ ! -d /tmp/mountData/moodledata ]]; then
+    echo "=== Backup does not contain Moodle data ===" >&2
+    exit 1
+fi
+
 echo "=== Clear PVC ==="
 rm -rf /dbp-moodle/moodle/*
 rm -rf /dbp-moodle/moodle/.[!.]*
 rm -rf /dbp-moodle/moodledata/*
 rm -rf /dbp-moodle/moodle/.[!.]*
-echo "=== Extract backup files ==="
-tar -xzf /tmp/Full/tmp/backup/moodle.tar.gz -C /tmp/ --no-same-owner
-tar -xzf /tmp/Full/tmp/backup/moodledata.tar.gz -C /tmp/ --no-same-owner
+
 echo "=== Move backup files ==="
 mv /tmp/mountData/moodle/* /dbp-moodle/moodle/
 mv /tmp/mountData/moodle/.[!.]* /dbp-moodle/moodle/

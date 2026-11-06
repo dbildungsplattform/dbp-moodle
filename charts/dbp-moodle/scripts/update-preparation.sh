@@ -41,11 +41,18 @@ kubectl patch "deploy/${deployment_name}" -n "{{ .Release.Namespace }}" -p '{"sp
 
 {{ if and .Values.dbpMoodle.backup.enabled .Values.dbpMoodle.backup.run_pre_upgrade }}
 if [ "$BACKUP_ENABLED" = true ]; then
+    backup_job="moodle-pre-update-backup-$(date +%s)-${RANDOM}"
+
     printf 'Starting pre-update backup\n'
-    kubectl create job moodle-pre-update-backup-job -n "{{ .Release.Namespace }}" --from="cronjob.batch/{{ include "backup-cronjob.job_name" . }}"
+    kubectl create job "$backup_job" -n "{{ .Release.Namespace }}" --from="cronjob.batch/{{ include "backup-cronjob.job_name" . }}"
+    
     printf 'Waiting for backup to finish...\n'
-    kubectl wait --for=condition=complete --timeout=10m job/moodle-pre-update-backup-job
+    if ! kubectl wait --for=condition=complete --timeout=10m \
+        -n "{{ .Release.Namespace }}" "job/${backup_job}"; then
+        printf 'Backup did not complete; aborting update preparations\n'
+        exit 1
+    fi
 fi
 {{ end }}
 
-printf 'Preparations completed successfully, exting...'
+printf 'Preparations completed successfully, exiting...\n'

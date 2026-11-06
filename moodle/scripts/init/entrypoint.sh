@@ -47,7 +47,7 @@ setStatusFile() {
 
 upgrade_if_pending() {
     set +o errexit
-    result=$(php "${moodle_path}/admin/cli/upgrade.php" --is-pending 2>&1)
+    result=$(php "${moodle_web_path}/admin/cli/upgrade.php" --is-pending 2>&1)
 
     EXIT_CODE=$?
     set -o errexit
@@ -60,7 +60,7 @@ upgrade_if_pending() {
         exit 1
     elif [ $EXIT_CODE -eq 2 ]; then
         MODULE="dbp-plugins" info 'Running Moodle upgrade'
-        php "${moodle_path}/admin/cli/upgrade.php" --non-interactive
+        php "${moodle_web_path}/admin/cli/upgrade.php" --non-interactive
     fi
 }
 
@@ -90,24 +90,37 @@ if [[ ! -f "$update_failed_path" ]]; then
     else
         MODULE=dbp error "Update failed! Continuing with previously installed moodle.."
         setStatusFile "$update_failed_path" true
+        exit 1
     fi
 else
     MODULE=dbp warn "Update failed previously. Skipping update check..."
+    exit 1
 fi
 
 
 MODULE=dbp info "Start Moodle setup script after checking for proper version"
 /scripts/init/moodle/moodleSetup.sh
 
+# Detect the layout after code refresh and persistence initialization.
+moodle_web_path="$moodle_path"
+if [[ -f "${moodle_path}/public/index.php" ]]; then
+    moodle_web_path="${moodle_path}/public"
+fi
+
+if [[ ! -f "${moodle_web_path}/admin/cli/upgrade.php" ]]; then
+    MODULE=dbp error "Expected Moodle upgrade script at ${moodle_web_path}/admin/cli/upgrade.php"
+    exit 1
+fi
+
 MODULE=dbp info "Replacing config.php file with ours"
 /bin/cp -p /moodleconfig/config-php/config.php /tmp/config.php
-mv /tmp/config.php /dbp-moodle/moodle/config.php
+mv /tmp/config.php "${moodle_path}/config.php"
 
 # Keep the webroot robots.txt in sync with the configured value. It is staged
 # read-only at /moodleconfig (outside the persistent webroot) and copied in
 # here so that it is owned like the rest of the persistent tree.
 MODULE=dbp info "Installing robots.txt into the webroot"
-/bin/cp /moodleconfig/robots-txt/robots.txt /dbp-moodle/moodle/robots.txt
+/bin/cp /moodleconfig/robots-txt/robots.txt "${moodle_web_path}/robots.txt"
 
 if [ -f "/tmp/de.zip" ] || [ -f "/tmp/en.zip" ]; then \
     mkdir -p /dbp-moodle/moodledata/lang
@@ -116,7 +129,7 @@ if [ -f "/tmp/de.zip" ] || [ -f "/tmp/en.zip" ]; then \
         rm -r /dbp-moodle/moodledata/lang/de
         unzip -q /tmp/de.zip -d /dbp-moodle/moodledata/lang
     fi
-    if [ -d /bitnami/moodledata/lang/en ]; then \
+    if [ -d /dbp-moodle/moodledata/lang/en ]; then \
         MODULE=dbp info "Update english language pack"
         rm -r /dbp-moodle/moodledata/lang/en
         unzip -q /tmp/en.zip -d /dbp-moodle/moodledata/lang
@@ -138,4 +151,4 @@ else
 fi
 
 MODULE=dbp info "Finished all preparations! Starting Webserver"
-/scripts/init/moodle/run.sh
+exec /scripts/init/moodle/run.sh

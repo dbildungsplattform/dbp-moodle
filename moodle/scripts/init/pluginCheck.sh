@@ -11,7 +11,12 @@ set -o pipefail
 # Load Moodle environment
 . /scripts/liblog.sh
 
+# Support both the Moodle 4.5 layout and the new public-directory layout.
 moodle_path="/dbp-moodle/moodle"
+if [[ -f "${moodle_path}/public/index.php" ]]; then
+    moodle_path="${moodle_path}/public"
+fi
+
 plugin_zip_path="/plugins"
 plugin_unzip_path="/tmp/plugins/"
 
@@ -131,6 +136,11 @@ get_plugin_version() {
 }
 
 main() {
+    if [[ ! -f "${moodle_path}/admin/cli/upgrade.php" ]]; then
+        MODULE="dbp-plugins" error "Expected Moodle CLI script at ${moodle_path}/admin/cli/upgrade.php"
+        return 1
+    fi
+
     rm -f "$update_plugins_path"
 
     if [ -d "$plugin_unzip_path" ]; then

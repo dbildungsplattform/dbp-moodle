@@ -28,7 +28,7 @@ SSL_CERTS_DIR="/opt/dbp-moodle/apache/certs"
 
 # Generate SSL certs (without a passphrase)
 mkdir -p "$SSL_CERTS_DIR"
-if [[ ! -f "$SSL_CERTS_DIR/tls.crt" ]]; then
+if [[ ! -f "$SSL_CERTS_DIR/tls.crt" || ! -f "$SSL_CERTS_DIR/tls.key" ]]; then
     echo "Generating sample certificates"
     SSL_KEY_FILE="$SSL_CERTS_DIR/tls.key"
     SSL_CERT_FILE="$SSL_CERTS_DIR/tls.crt"

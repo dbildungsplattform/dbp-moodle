@@ -76,8 +76,6 @@ $CFG->forced_plugin_settings['qtype_stack']['maximacommandserver'] = 'http://moo
 $CFG->forced_plugin_settings['qtype_stack']['maximaversion'] = 'default';
 {{- end }}
 
-require_once(__DIR__ . '/lib/setup.php');
-
 {{- if .Values.dbpMoodle.phpConfig.extendedLogging }}
 define('MDL_PERF' , true);
 define('MDL_PERFDB' , true);
@@ -100,6 +98,13 @@ $CFG->debugpageinfo = 0;
 $CFG->perfdebug = 7;
 $CFG->debugsqltrace = 0;
 {{- end }}
+
+// Support the new public-directory layout and existing Moodle 4.5 installations.
+require_once(
+    is_file(__DIR__ . '/public/lib/setup.php')
+        ? __DIR__ . '/public/lib/setup.php'
+        : __DIR__ . '/lib/setup.php'
+);
 
 // There is no php closing tag in this file,
 // it is intentional because it prevents trailing whitespace problems!
