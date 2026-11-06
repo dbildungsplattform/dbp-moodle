@@ -66,7 +66,7 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | image.pullSecrets | list | `[]` |  |
 | image.registry | string | `"ghcr.io"` |  |
 | image.repository | string | `"dbildungsplattform/moodle"` |  |
-| image.tag | string | `"4.5.15-fpm-trixie-8.2.35-dbp1"` |  |
+| image.tag | string | `"4.5.15-fpm-trixie-8.2.35-dbp2"` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.apiVersion | string | `""` |  |
 | ingress.enabled | bool | `false` |  |
@@ -93,27 +93,6 @@ Moodle(TM) LMS is an open source online Learning Management System widely used a
 | livenessProbe.periodSeconds | int | `10` |  |
 | livenessProbe.successThreshold | int | `1` |  |
 | livenessProbe.timeoutSeconds | int | `5` |  |
-| metrics.enabled | bool | `false` |  |
-| metrics.image.digest | string | `""` |  |
-| metrics.image.pullPolicy | string | `"IfNotPresent"` |  |
-| metrics.image.pullSecrets | list | `[]` |  |
-| metrics.image.registry | string | `"docker.io"` |  |
-| metrics.image.repository | string | `"lusotycoon/apache-exporter"` |  |
-| metrics.image.tag | string | `"v1.1.1"` |  |
-| metrics.podAnnotations."prometheus.io/port" | string | `"{{ .Values.metrics.service.port }}"` |  |
-| metrics.podAnnotations."prometheus.io/scrape" | string | `"true"` |  |
-| metrics.resources | object | `{}` |  |
-| metrics.resourcesPreset | string | `"nano"` |  |
-| metrics.service.annotations."prometheus.io/port" | string | `"{{ .Values.metrics.service.port }}"` |  |
-| metrics.service.annotations."prometheus.io/scrape" | string | `"true"` |  |
-| metrics.service.clusterIP | string | `""` |  |
-| metrics.service.externalTrafficPolicy | string | `"Cluster"` |  |
-| metrics.service.loadBalancerIP | string | `""` |  |
-| metrics.service.loadBalancerSourceRanges | list | `[]` |  |
-| metrics.service.port | int | `9117` |  |
-| metrics.service.sessionAffinity | string | `"None"` |  |
-| metrics.service.sessionAffinityConfig | object | `{}` |  |
-| metrics.service.type | string | `"LoadBalancer"` |  |
 | moodleEmail | string | `"user@example.com"` |  |
 | moodleLang | string | `""` |  |
 | moodlePassword | string | `""` |  |

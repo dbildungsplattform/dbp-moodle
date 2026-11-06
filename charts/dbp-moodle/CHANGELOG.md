@@ -1,10 +1,12 @@
 # Changelog
-## Unreleased
+## [1.12.0]
 ### Changes
 - **DBP-2594** Add inactive user plugin
   - Introduce `global.moodlePlugins.tool_inactive_user_cleanup` to enable/disable the Plugin https://marketplace.moodle.com/plugins/tool_inactive_user_cleanup
+- **DBP-2601** Remove apache-exporter
+  - Remove the apache-exporter and the `moodle.metrics` block within the helm values. 
 
--  Use Image 4.5.15-fpm-trixie-8.2.35-dbp2 as default # TODO
+-  Use Image 4.5.15-fpm-trixie-8.2.35-dbp2 as default
 
 ## [1.11.1] - 2026-11-03
 ### Changes
