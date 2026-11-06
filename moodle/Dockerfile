@@ -36,11 +36,12 @@ RUN apt-get update && \
 
 # Install apache2 and its dependencies
 RUN apt-get install -y libapr1 libaprutil1 libc6 libaprutil1-dbd-sqlite3 libcurl4 libaprutil1-ldap libexpat1 liblua5.3-0 libssl3 libxml2 media-types procps
-RUN curl -LO ${APACHE_DOWNLOAD_URL}/apache2-bin_${APACHE_VERSION}_amd64.deb && \
-    curl -LO ${APACHE_DOWNLOAD_URL}/apache2-data_${APACHE_VERSION}_all.deb && \
-    curl -LO ${APACHE_DOWNLOAD_URL}/apache2-utils_${APACHE_VERSION}_amd64.deb && \
-    curl -LO ${APACHE_DOWNLOAD_URL}/apache2_${APACHE_VERSION}_amd64.deb && \
-    dpkg -i *.deb || apt-get -y -f install && \
+# snapshot.debian.org intermittently returns 503s: fail on HTTP errors (-f) and retry, so an error page is never saved as a .deb
+RUN curl -fLO --retry 5 --retry-all-errors ${APACHE_DOWNLOAD_URL}/apache2-bin_${APACHE_VERSION}_amd64.deb && \
+    curl -fLO --retry 5 --retry-all-errors ${APACHE_DOWNLOAD_URL}/apache2-data_${APACHE_VERSION}_all.deb && \
+    curl -fLO --retry 5 --retry-all-errors ${APACHE_DOWNLOAD_URL}/apache2-utils_${APACHE_VERSION}_amd64.deb && \
+    curl -fLO --retry 5 --retry-all-errors ${APACHE_DOWNLOAD_URL}/apache2_${APACHE_VERSION}_amd64.deb && \
+    (dpkg -i *.deb || apt-get -y -f install) && \
     apt-get install -y libapache2-mod-fcgid && \
     rm *.deb
 

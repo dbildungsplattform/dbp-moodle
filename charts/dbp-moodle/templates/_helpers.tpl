@@ -125,6 +125,7 @@ videotime:mod_videotime:mod/videotime:                          {{- .Values.glob
 mediatime:tool_mediatime:admin/tool/mediatime:                  {{- .Values.global.moodlePlugins.tool_mediatime.enabled }}{{"\n"}}
 course_reminder:local_course_reminder:local/course_reminder:    {{- .Values.global.moodlePlugins.local_course_reminder.enabled }}{{"\n"}}
 dynamicformat:customfield_dynamicformat:/customfield/field/dynamicformat:{{- .Values.global.moodlePlugins.customfield_dynamicformat.enabled }}{{"\n"}}
+inactive_user_cleanup:tool_inactive_user_cleanup:/admin/tool/inactive_user_cleanup:{{- .Values.global.moodlePlugins.tool_inactive_user_cleanup.enabled }}{{"\n"}}
 {{- end -}}
 
 {{- define "dbpMoodle.pluginConfigMap.sys.uninstall.content" -}}
