@@ -9,6 +9,7 @@ ARG APACHE_VERSION=${APACHE_VERSION:-"2.4.68-1~deb13u1"}
 ARG APACHE_DOWNLOAD_URL="https://snapshot.debian.org/archive/debian/20260920T203924Z/pool/main/a/apache2/"
 WORKDIR /
 ARG WITH_ALL_LOCALES="no"
+ARG SKIP_UNSUPPORTED_PLUGINS=true
 RUN mkdir /bitnami
 RUN mkdir /dbp-moodle
 

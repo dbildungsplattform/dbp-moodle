@@ -50,15 +50,41 @@ check_plugin_zip() {
 # The marketplace intermittently answers with 5xx (e.g. 502 Bad Gateway). "moosh plugin-download"
 # still exits 0 and leaves an empty zip behind in that case, so success is judged by the zip itself.
 # Retries back off exponentially: 30s, 60s, 120s, ... between attempts.
+# Set SKIP_UNSUPPORTED_PLUGINS=false to require support for every plugin.
 download_marketplace_plugin() {
-    plugin_name=$1
-    moodle_version=$2
-    max_attempts=5
-    retry_delay=30
+    local plugin_name="$1"
+    local moodle_version="$2"
+    local max_attempts=5
+    local retry_delay=30
+    local attempt output download_status
 
     for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
-        if php -d memory_limit=256M /usr/local/bin/moosh plugin-download -v "$moodle_version" "$plugin_name" \
-            && validate_plugin_zip "$plugin_name"; then
+        # Avoid accepting a stale ZIP from an earlier download.
+        rm -f "/plugins/${plugin_name}.zip"
+
+        if output=$(php -d memory_limit=256M /usr/local/bin/moosh \
+            plugin-download -v "$moodle_version" "$plugin_name" 2>&1); then
+            download_status=0
+        else
+            download_status=$?
+        fi
+        printf '%s\n' "$output"
+
+        if grep -F 'This plugin is not supported for your Moodle version' \
+            <<< "$output" > /dev/null; then
+            rm -f "/plugins/${plugin_name}.zip"
+
+            if [[ "${SKIP_UNSUPPORTED_PLUGINS:-true}" == "true" ]]; then
+                echo "WARNING: Skipping '${plugin_name}': not supported for Moodle ${moodle_version}." >&2
+                return 0
+            fi
+
+            echo "ERROR: Plugin '${plugin_name}' is not supported for Moodle ${moodle_version}." >&2
+            return 1
+        fi
+
+        if [[ "$download_status" -eq 0 ]] &&
+            validate_plugin_zip "$plugin_name"; then
             return 0
         fi
 
@@ -69,9 +95,8 @@ download_marketplace_plugin() {
             retry_delay=$((retry_delay * 2))
         fi
     done
-
     echo "ERROR: Giving up on Moodle plugin '$plugin_name' after ${max_attempts} attempts." >&2
-    exit 1
+    return 1
 }
 
 # "moosh plugin-download" hardcodes home_dir() . '/.moosh/plugins.json' (there is no -p option)
