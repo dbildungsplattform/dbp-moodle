@@ -150,5 +150,8 @@ else
     MODULE=dbp warn "Update or Plugin check failed previously. Skipping plugin check..."
 fi
 
+# Check again after plugin synchronization, including when no plugins changed.
+upgrade_if_pending
+
 MODULE=dbp info "Finished all preparations! Starting Webserver"
 exec /scripts/init/moodle/run.sh

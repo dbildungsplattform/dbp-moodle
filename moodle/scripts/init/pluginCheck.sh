@@ -119,7 +119,7 @@ upgrade_if_pending() {
     elif [ $EXIT_CODE -eq 1 ]; then
         MODULE="dbp-plugins" error 'Call to upgrade.php failed... Can not continue installation'
         MODULE="dbp-plugins" error "$result"
-        exit 1
+        return 1
     elif [ $EXIT_CODE -eq 2 ]; then
         MODULE="dbp-plugins" info 'Running Moodle upgrade'
         php "${moodle_path}/admin/cli/upgrade.php" --non-interactive
@@ -176,6 +176,14 @@ main() {
                 # if eledia_oidc is not active let the default oidc handle it, to not uninstall it when its actually needed for the standard oidc
                 continue
             fi
+        fi
+
+        # Build-time unsupported plugins may intentionally have no archive.
+        # Do not change their existing files or prevent explicit uninstallations.
+        if [[ "$plugin_target_state" = true &&
+              ! -s "${plugin_zip_path}/${plugin_fullname}.zip" ]]; then
+            MODULE="dbp-plugins" warn "Skipping ${plugin_fullname}: archive unavailable. Existing plugin files are unchanged."
+            continue
         fi
 
         full_path="${moodle_path}/${plugin_path}"
@@ -257,7 +265,6 @@ main() {
     
     if [ "$anychange" = true ]; then
         upgrade_if_pending
-        php "${moodle_path}/admin/cli/uninstall_plugins.php" --purge-missing --run
         php "${moodle_path}/admin/cli/purge_caches.php"
     else
         MODULE="dbp-plugins" info 'No plugin state change detected.'
