@@ -18,7 +18,7 @@ jobs:
       packages: write
       security-events: write
       contents: read
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@7
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     with:
       image_name: "moodle"
       run_trivy_scan: false
@@ -29,7 +29,7 @@ jobs:
       context: "./moodle/"
 
   release_helm:
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/chart-release.yaml@7
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/chart-release.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     secrets: inherit
     with:
       chart_name: dbp-moodle

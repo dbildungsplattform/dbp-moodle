@@ -13,7 +13,7 @@ jobs:
       suffix: ${{ steps.tag.outputs.suffix }}
     steps:
       - name: Filter Tag name
-        uses: olegtarasov/get-tag@v2.1
+        uses: olegtarasov/get-tag@53af8e1e538a0ffab949cdde3e332d8e58e8630f # v2.1
         id: tag
         with:
           tagRegex: "(?<tag>[0-9]+.[0-9]+.[0-9]+)(?<suffix>-.*)?"
@@ -25,10 +25,10 @@ jobs:
       actions: read
       contents: read
     needs: pre_build
-    uses: hpi-schul-cloud/infra-tools/.github/workflows/build-and-push.yaml@main
+    uses: dbildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     with:
-      registry: ghcr.io
-      image: dbildungsplattform/moodle-tools
-      tag: ${{ needs.pre_build.outputs.tag }}
-      suffix: ${{ needs.pre_build.outputs.suffix }}
+      container_registry: "ghcr.io"
+      image_name: "moodle-tools"
+      image_tag_generation: "specified,mm_git_tag"
+      image_tag: "${{ needs.pre_build.outputs.tag }}${{ needs.pre_build.outputs.suffix }}"
       context: "./moodle-tools/"
