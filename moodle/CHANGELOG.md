@@ -1,5 +1,5 @@
 ## [4.5.15-fpm-trixie-8.2.35-dbp3]
-### Plugins
+### Changes
 - **OPS-13053** Security Patches
   - Updates apache exporter
 
