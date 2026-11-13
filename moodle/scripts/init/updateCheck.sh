@@ -1,20 +1,29 @@
 #!/bin/bash
 
+set -o errexit
+set -o errtrace
 set -o nounset
+set -o pipefail
 
 . /scripts/liblog.sh
 
 moodle_path="/dbp-moodle/moodle"
+current_image_moodle_path="/opt/dbp-moodle/moodle"
 
 # data folders
 moodle_backup_path="/dbp-moodle/moodledata/moodle-backup"
 
+# Handles errors during the update process by restoring the backup.
+# Is triggered by the ERR trap.
+# This creates the directory /dbp-moodle/moodle-failed to store the
+# state of the moodle at time of error for debugging purposes.
 onErrorRestoreBackup() {
     mv "${moodle_path}" "${moodle_path}-failed"
     cp -rp "${moodle_backup_path}" "${moodle_path}"
 }
 
 # return 0 if equal, -1 if $1 > $2 and 1 if $1 < $2
+# Required to compare semantic version numbers correctly
 compare_semver() {
     local v1="$1"
     local v2="$2"
@@ -31,6 +40,9 @@ compare_semver() {
     fi
 }
 
+# Reads the moodle version from the given path out of the version.php file
+# $1 - path to the Moodle directory
+# Returns the version string in the format X.Y.Z    
 get_moodle_version_by_path() {
     local version_file="$1/public/version.php"
     local version
@@ -55,6 +67,9 @@ get_moodle_version_by_path() {
     printf '%s\n' "$version"
 }
 
+# This does create a local backup of the current Moodle installation before updating.
+# The backup is stored in /dbp-moodle/moodledata/moodle-backup
+# It does not create a backup of the database, only the Moodle files.
 create_backup() {
     if [ -d "$moodle_backup_path" ]; then
         rm -rf "$moodle_backup_path"
@@ -63,17 +78,26 @@ create_backup() {
     tar -czf "${moodle_backup_path}/moodle-backup.tar.gz" -C "${moodle_path}" .
 }
 
+# Install the new Moodle version from the current image path (/opt/dbp-moodle/moodle)
+# to the default local Moodle path (/dbp-moodle/moodle)
+# We only reach this steap after we ensure that the new Moodle version is available and not a symlink.
 install_new_version() {
     local image_version="$1"
     MODULE="dbp-update" info "Installing new Moodle (${image_version})"
     mkdir -p "$moodle_path"
-    tar --strip-components=1 -xzf "/tmp/moodle-${image_version}.tgz" -C "$moodle_path"
+    cp -a "${current_image_moodle_path}/." "${moodle_path}/"
 }
 
 main() {
-    
+    local installed_version new_image_version comp_result
+
+    if [[ -L "${current_image_moodle_path}" || ! -f "${current_image_moodle_path}/public/index.php" ]]; then
+        MODULE="dbp-update" error "New Moodle installation is unavailable or already replaced by a persistence symlink"
+        exit 1
+    fi
+
     installed_version="$(get_moodle_version_by_path "${moodle_path}")"
-    new_image_version="$(get_moodle_version_by_path "/opt/dbp-moodle/moodle")"
+    new_image_version="$(get_moodle_version_by_path "${current_image_moodle_path}")"
 
     if [[ ! "$new_image_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         MODULE="dbp-update" error "Cannot determine the image Moodle version"
@@ -99,6 +123,7 @@ main() {
         MODULE="dbp-update" error "Exiting update..."
         exit 1
     fi
+
     MODULE="dbp-update" info "Creating local backup"
     create_backup
 
