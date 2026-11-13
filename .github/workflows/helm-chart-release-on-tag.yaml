@@ -10,12 +10,12 @@ concurrency:
 
 jobs:
   scan:
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/check-helm-kics.yaml@7
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/check-helm-kics.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     permissions:
       contents: read
   release_helm:
     needs: scan
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/chart-release.yaml@7
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/chart-release.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     secrets: inherit
     with:
       chart_name: dbp-moodle

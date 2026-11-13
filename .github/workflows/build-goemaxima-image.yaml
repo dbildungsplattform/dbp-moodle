@@ -174,7 +174,7 @@ jobs:
       security-events: write
       contents: read
     needs: get_build_args
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@8
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     with:
       image_name: "goemaxima"
       run_trivy_scan: true

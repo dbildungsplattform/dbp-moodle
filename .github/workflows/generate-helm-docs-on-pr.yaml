@@ -21,7 +21,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.ref }}
     - name: Generate Helm-Docs
-      uses: hpi-schul-cloud/infra-tools/.github/actions/helm-docs@tf-helm-docs-v1
+      uses: dbildungsplattform/infra-tools/.github/actions/helm-docs@3a0655d4a3ce4ace7722079ce73c80335687e743 # tf-helm-docs-v3
       with:
         # provide name of dirs to run helm-docs on, separate by comma without space
         src_path: "charts"

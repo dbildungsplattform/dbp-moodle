@@ -12,10 +12,10 @@ permissions:
   contents: write
 jobs:
   trivy_image_scan_cron:
-    uses: hpi-schul-cloud/infra-tools/.github/workflows/trivy-scan.yaml@main
+    uses: dbildungsplattform/infra-tools/.github/workflows/trivy-scan.yaml@2172c9db867d6515a0876683a50cc608b4d41131 # main
     with:
       image-ref: 'ghcr.io/dbildungsplattform/moodle:latest'
   clamav_scan:
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/check-image-clamav.yaml@7
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/check-image-clamav.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
     with:
       image_ref: 'ghcr.io/dbildungsplattform/moodle:latest'
