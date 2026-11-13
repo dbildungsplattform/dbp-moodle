@@ -4,7 +4,8 @@ ARG MOODLE_VERSION=${MOODLE_VERSION:-"4.5.15"}
 #This is the path moodle will be placed after downloading for our Moodle Update Pipeline
 ARG MOODLE_PATH="/opt/dbp-moodle/moodle"
 ARG EXTRA_LOCALES=""
-#At the moment Apache will be updated to the latest release as unattended update during the build process
+# Remove this logic on migration to 5.3
+#At the moment Apache will be updated to the latest release as unattended update during the build process 
 ARG APACHE_VERSION=${APACHE_VERSION:-"2.4.68-1~deb13u1"}
 ARG APACHE_DOWNLOAD_URL="https://snapshot.debian.org/archive/debian/20260920T203924Z/pool/main/a/apache2/"
 WORKDIR /
