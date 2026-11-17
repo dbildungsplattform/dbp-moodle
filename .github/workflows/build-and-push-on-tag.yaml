@@ -25,7 +25,7 @@ jobs:
       actions: read
       contents: read
     needs: pre_build
-    uses: dbildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@ac540af7a37263a102c7bc6c8c9447a7b176f027 # 8.6.0
+    uses: dbildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@8
     with:
       container_registry: "ghcr.io"
       image_name: "moodle"
