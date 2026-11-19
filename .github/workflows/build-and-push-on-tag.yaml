@@ -13,7 +13,7 @@ jobs:
       suffix: ${{ steps.tag.outputs.suffix }}
     steps:
       - name: Filter Tag name
-        uses: olegtarasov/get-tag@v2.1
+        uses: olegtarasov/get-tag@9a8716825750e73195b02db42777b92ffe960605  # v2.1.4
         id: tag
         with:
           tagRegex: "(?<tag>[0-9]+.[0-9]+.[0-9]+)(?<suffix>-.*)"
@@ -25,7 +25,7 @@ jobs:
       actions: read
       contents: read
     needs: pre_build
-    uses: hpi-schul-cloud/infra-tools/.github/workflows/build-and-push.yaml@main
+    uses: dbildungsplattform/infra-tools/.github/workflows/build-and-push.yaml@main
     with:
       registry: ghcr.io
       image: dbildungsplattform/moodle
