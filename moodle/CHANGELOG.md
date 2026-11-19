@@ -1,3 +1,8 @@
+## [4.5.15-fpm-trixie-8.2.36-dbp1]
+### Changes
+- **DBP-2655** Security Patches
+  - Updates PHP
+
 ## [4.5.15-fpm-trixie-8.2.35-dbp3]
 ### Changes
 - **OPS-13053** Security Patches
