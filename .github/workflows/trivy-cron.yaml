@@ -12,7 +12,7 @@ permissions:
   contents: write
 jobs:
   trivy_image_scan_cron:
-    uses: dbildungsplattform/infra-tools/.github/workflows/trivy-scan.yaml@2172c9db867d6515a0876683a50cc608b4d41131 # main
+    uses: dbildungsplattform/infra-tools/.github/workflows/trivy-scan.yaml@6a1f19225e98501c0357029e09e7da1805191160 # main
     with:
       image-ref: 'ghcr.io/dbildungsplattform/moodle:latest'
   clamav_scan:
