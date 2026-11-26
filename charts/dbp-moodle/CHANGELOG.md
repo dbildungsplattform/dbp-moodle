@@ -1,4 +1,11 @@
 # Changelog
+## [Uncommitted]
+### Changes
+- **DBP-2654** Move Moodle's `localcachedir` off the shared NFS volume
+  - Mount a pod-local `emptyDir` at `/dbp-moodle-localcache` and set `$CFG->localcachedir` to it
+  - Configurable via `moodle.localCache` (`enabled`, `mountPath`, `sizeLimit`, `medium`); enabled by default
+  - Fixes PHP-FPM workers hanging in `do_truncate` / `handle_async_copy` when theme images are cached via NFSv4.2 server-side copy
+
 ## [1.12.0]
 ### Changes
 - **DBP-2594** Add inactive user plugin

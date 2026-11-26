@@ -169,6 +169,19 @@ extraVolumes: []
 ## @param extraVolumeMounts Array of extra volume mounts to be added to the container (evaluated as template). Normally used with `extraVolumes`.
 ##
 extraVolumeMounts: []
+## Pod-local Moodle cache ($CFG->localcachedir)
+## Moodle requires localcachedir to be node-local and not shared between pods. Without it Moodle
+## falls back to <dataroot>/localcache, which lives on the shared NFS volume.
+## @param localCache.enabled Mount an emptyDir and point $CFG->localcachedir at it
+## @param localCache.mountPath Mount path of the local cache inside the Moodle container
+## @param localCache.sizeLimit Size limit of the emptyDir (counts against the pod's ephemeral storage)
+## @param localCache.medium emptyDir medium ("" for node disk, "Memory" for tmpfs - counts against the memory limit)
+##
+localCache:
+  enabled: true
+  mountPath: /dbp-moodle-localcache
+  sizeLimit: 2Gi
+  medium: ""
 ## @param initContainers Extra init containers to add to the deployment
 ##
 initContainers: []

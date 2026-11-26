@@ -221,6 +221,10 @@ spec:
             - name: moodle-data
               mountPath: /dbp-moodle/moodledata
               subPath: moodledata
+            {{- if .Values.localCache.enabled }}
+            - name: moodle-localcache
+              mountPath: {{ .Values.localCache.mountPath }}
+            {{- end }}
             - name: moodle-robots-txt
               mountPath: /moodleconfig/robots-txt
               readOnly: true
@@ -238,6 +242,16 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if .Values.localCache.enabled }}
+        - name: moodle-localcache
+          emptyDir:
+            {{- with .Values.localCache.medium }}
+            medium: {{ . }}
+            {{- end }}
+            {{- with .Values.localCache.sizeLimit }}
+            sizeLimit: {{ . }}
+            {{- end }}
+        {{- end }}
         - name: moodle-robots-txt
           configMap:
             name: moodle-robots-txt

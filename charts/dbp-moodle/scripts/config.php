@@ -25,6 +25,12 @@ $CFG->dataroot  = '/dbp-moodle/moodledata';
 $CFG->admin     = 'admin';
 $CFG->directorypermissions = 02775;
 
+{{- if .Values.moodle.localCache.enabled }}
+// Node-local cache (theme images, JS/CSS, lang strings). Must not live on the shared NFS dataroot:
+// copy() from NFS into NFS triggers NFSv4.2 server-side COPY, which can wedge PHP-FPM workers.
+$CFG->localcachedir = '{{ .Values.moodle.localCache.mountPath }}';
+{{- end }}
+
 $CFG->getremoteaddrconf = 0; // Shows the real client IPs
 $CFG->allowedip = '{{ .Values.dbpMoodle.phpConfig.ip.allowed }}';
 $CFG->blockedip = '{{ .Values.dbpMoodle.phpConfig.ip.blocked }}';
